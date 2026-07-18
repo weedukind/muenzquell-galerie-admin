@@ -1,12 +1,13 @@
 # Cloud Upload Manager
 
-A Next.js app for uploading images to Cloudflare R2, storing their metadata in MariaDB, and tagging them.
+A Next.js app for uploading images to Cloudflare R2, storing their metadata in Cloudflare D1, and tagging them.
 
 ## Features
 
 - Multi-file upload to Cloudflare R2; image dimensions are detected automatically on upload
-- Overview table with bulk selection: bulk delete, bulk tag editing, and an AND-based tag filter (clickable chips)
+- Overview table with bulk selection: bulk delete, bulk tag editing, an AND-based tag filter (clickable chips), and CSV export of the currently filtered uploads
 - Tag images individually or in bulk, create new tags on the fly — including right at upload time, before the files exist
+- Dedicated tag management page: create, rename, recolor, and delete tags, with a usage count per tag
 - Deleting an image removes both the R2 object and the DB row; tag associations are cleaned up automatically via `ON DELETE CASCADE`
 
 ## Getting started
@@ -24,8 +25,8 @@ Open http://localhost:3000.
 
 Configured via `.env.local` (not checked in):
 
-- `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_DATABASE` — MariaDB connection
-- `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_URL` — Cloudflare R2 storage
+- `D1_DATABASE_ID`, `CLOUDFLARE_API_TOKEN` — Cloudflare D1 (queried over its HTTP API, not a Workers binding)
+- `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_URL` — Cloudflare R2 storage (the account id also doubles as the D1 account id, since both live in the same Cloudflare account)
 
 ## Database schema
 
@@ -48,7 +49,7 @@ The runner tracks applied migrations in a `schema_migrations` table and only run
 
 - `app/` — routes, pages, and client components (App Router)
 - `services/` — database access (`uploadService`, `tagService`) and R2 storage (`storageService`)
-- `lib/` — `db.ts` (MySQL pool), `r2.ts` (S3 client), `formatSize.ts`
+- `lib/` — `db.ts` (Cloudflare D1 HTTP API client), `r2.ts` (S3 client for R2), `csv.ts` (CSV export helper), `formatSize.ts`
 - `hooks/` — shared client hooks (`useSelection`)
 - `migrations/` — numbered SQL schema migrations, run via `scripts/migrate.mjs`
 - `types/` — shared TypeScript types
