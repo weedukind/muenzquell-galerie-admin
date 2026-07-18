@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Plus, Check } from "lucide-react";
 import { TagRecord } from "@/types/tag";
 import { createTag } from "@/lib/api";
 import TagChip from "./TagChip";
@@ -63,7 +64,7 @@ export default function TagPicker({ currentTagIds, allTags, onSave }: Props) {
     }
 
     return (
-        <div className="absolute left-0 top-full z-10 mt-1 w-40 rounded border border-gray-300 bg-white p-2 shadow">
+        <div className="absolute left-0 top-full z-10 mt-1.5 w-44 rounded-lg border border-gray-200 bg-white p-2.5 shadow-lg">
 
             <div className="flex max-h-40 flex-wrap gap-1 overflow-y-auto">
 
@@ -78,22 +79,22 @@ export default function TagPicker({ currentTagIds, allTags, onSave }: Props) {
 
             </div>
 
-            <div className="mt-2 flex items-center gap-1 border-t border-gray-200 pt-2">
+            <div className="mt-2 flex items-center gap-1 border-t border-gray-100 pt-2">
 
                 <input
                     type="text"
                     value={newTagName}
                     onChange={e => setNewTagName(e.target.value)}
                     placeholder="Neues Tag…"
-                    className="w-full min-w-0 rounded border border-gray-300 px-1 text-xs text-black"
+                    className="w-full min-w-0 rounded-md border border-gray-300 px-1.5 py-1 text-xs text-black focus:border-blue-400 focus:outline-none"
                 />
 
                 <button
                     onClick={handleCreateTag}
                     disabled={!newTagName.trim()}
-                    className="shrink-0 rounded bg-green-600 px-2 py-0.5 text-xs text-white hover:bg-green-700 disabled:opacity-50"
+                    className="flex shrink-0 items-center justify-center rounded-md bg-emerald-600 p-1 text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                    +
+                    <Plus className="size-3.5" />
                 </button>
 
             </div>
@@ -101,8 +102,9 @@ export default function TagPicker({ currentTagIds, allTags, onSave }: Props) {
             <button
                 onClick={handleSave}
                 disabled={saving}
-                className="mt-2 w-full rounded bg-blue-600 px-2 py-0.5 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
+                className="mt-2 flex w-full items-center justify-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
+                <Check className="size-3.5" />
                 {saving ? "Speichert…" : "Speichern"}
             </button>
 

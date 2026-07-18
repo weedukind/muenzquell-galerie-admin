@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
 import { deleteUpload } from "@/lib/api";
 
 interface Props {
@@ -42,11 +43,12 @@ export default function BulkDeleteButton({ selectedIds, onDeleted }: Props) {
         <button
             onClick={deleteSelected}
             disabled={selectedIds.length === 0 || deleting}
-            className="rounded bg-red-600 px-3 py-1 text-white hover:bg-red-700 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
         >
+            <Trash2 className="size-4" />
             {deleting
-                ? "Löschen läuft..."
-                : `Ausgewählte löschen (${selectedIds.length})`}
+                ? "Löschen läuft…"
+                : `Löschen (${selectedIds.length})`}
         </button>
     );
 }

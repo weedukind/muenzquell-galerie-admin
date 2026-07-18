@@ -1,5 +1,6 @@
 "use client";
 
+import { Filter, X } from "lucide-react";
 import { TagRecord } from "@/types/tag";
 import TagChip from "./TagChip";
 
@@ -13,9 +14,10 @@ interface Props {
 export default function TagFilterBar({ allTags, activeTagIds, onToggle, onReset }: Props) {
 
     return (
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5">
 
-            <span className="text-sm text-gray-600">
+            <span className="flex items-center gap-1.5 text-sm font-medium text-gray-600">
+                <Filter className="size-3.5" />
                 Nach Tags filtern:
             </span>
 
@@ -31,9 +33,10 @@ export default function TagFilterBar({ allTags, activeTagIds, onToggle, onReset 
             {activeTagIds.length > 0 && (
                 <button
                     onClick={onReset}
-                    className="text-xs text-gray-500 underline"
+                    className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700"
                 >
-                    Filter zurücksetzen
+                    <X className="size-3" />
+                    Zurücksetzen
                 </button>
             )}
 

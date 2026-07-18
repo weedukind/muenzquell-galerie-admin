@@ -6,9 +6,9 @@ export default async function UploadPage() {
     const allTags = await getTags();
 
     return (
-        <div className="p-6">
+        <div className="mx-auto max-w-3xl p-6">
 
-            <h1 className="mb-6 text-3xl font-bold">
+            <h1 className="mb-6 text-2xl font-semibold tracking-tight text-gray-900">
                 Upload
             </h1>
 

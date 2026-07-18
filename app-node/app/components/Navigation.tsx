@@ -1,36 +1,45 @@
 import Link from "next/link";
+import { Cloud, LayoutGrid, Upload, Tags } from "lucide-react";
 
 export default function Navigation() {
 
     return (
-        <nav className="bg-slate-800 text-white">
+        <nav className="sticky top-0 z-20 border-b border-slate-700/50 bg-slate-900/95 text-white shadow-sm backdrop-blur">
 
-            <div className="mx-auto flex max-w-7xl items-center gap-8 px-6 py-4">
+            <div className="mx-auto flex max-w-7xl items-center gap-8 px-6 py-3.5">
 
-                <div className="text-xl font-bold">
+                <div className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+                    <Cloud className="size-5 text-sky-400" />
                     Cloud Upload Manager
                 </div>
 
-                <Link
-                    href="/"
-                    className="hover:text-sky-300"
-                >
-                    Übersicht
-                </Link>
+                <div className="flex items-center gap-1">
 
-                <Link
-                    href="/upload"
-                    className="hover:text-sky-300"
-                >
-                    Upload
-                </Link>
+                    <Link
+                        href="/"
+                        className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                        <LayoutGrid className="size-4" />
+                        Übersicht
+                    </Link>
 
-                <Link
-                    href="/tags"
-                    className="hover:text-sky-300"
-                >
-                    Tag-Verwaltung
-                </Link>
+                    <Link
+                        href="/upload"
+                        className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                        <Upload className="size-4" />
+                        Upload
+                    </Link>
+
+                    <Link
+                        href="/tags"
+                        className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                        <Tags className="size-4" />
+                        Tag-Verwaltung
+                    </Link>
+
+                </div>
 
             </div>
 

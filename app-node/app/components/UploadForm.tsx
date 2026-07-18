@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { UploadCloud, Tags, FileIcon, CheckCircle2, XCircle } from "lucide-react";
 import { TagRecord } from "@/types/tag";
 import { assignTag, uploadFileWithProgress } from "@/lib/api";
 import TagPicker from "./TagPicker";
@@ -93,30 +94,55 @@ export default function UploadForm({ allTags }: Props) {
     return (
         <div className="space-y-6">
 
-            <input
-                type="file"
-                multiple
-                onChange={onSelectFiles}
-            />
+            <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center transition-colors hover:border-blue-400 hover:bg-blue-50/50">
+                <UploadCloud className="size-8 text-gray-400" />
+                <span className="text-sm font-medium text-gray-700">
+                    Dateien auswählen oder hierher ziehen
+                </span>
+                <span className="text-xs text-gray-500">
+                    Mehrfachauswahl möglich
+                </span>
+                <input
+                    type="file"
+                    multiple
+                    onChange={onSelectFiles}
+                    className="hidden"
+                />
+            </label>
 
             {selectedFiles.length > 0 && (
 
-                <div>
+                <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
 
-                    <h2 className="font-semibold mb-2">
+                    <h2 className="mb-3 text-sm font-semibold text-gray-700">
                         Ausgewählte Dateien
                     </h2>
 
-                    <ul className="space-y-2">
+                    <ul className="space-y-3">
 
                         {selectedFiles.map((file, index) => (
                             <li key={`${file.name}-${index}`}>
-                                <div className="flex justify-between text-sm">
-                                    <span>{file.name}</span>
-                                    <span>
-                                        {fileStates[index]?.error
-                                            ? "Fehlgeschlagen"
-                                            : `${fileStates[index]?.progress ?? 0}%`}
+                                <div className="mb-1 flex items-center justify-between gap-2 text-sm">
+                                    <span className="flex min-w-0 items-center gap-1.5 truncate text-gray-700">
+                                        <FileIcon className="size-3.5 shrink-0 text-gray-400" />
+                                        <span className="truncate">{file.name}</span>
+                                    </span>
+                                    <span className="flex shrink-0 items-center gap-1 text-xs">
+                                        {fileStates[index]?.error ? (
+                                            <span className="flex items-center gap-1 text-red-600">
+                                                <XCircle className="size-3.5" />
+                                                Fehlgeschlagen
+                                            </span>
+                                        ) : fileStates[index]?.progress === 100 ? (
+                                            <span className="flex items-center gap-1 text-emerald-600">
+                                                <CheckCircle2 className="size-3.5" />
+                                                Fertig
+                                            </span>
+                                        ) : (
+                                            <span className="text-gray-500">
+                                                {fileStates[index]?.progress ?? 0}%
+                                            </span>
+                                        )}
                                     </span>
                                 </div>
                                 <ProgressBar
@@ -128,37 +154,41 @@ export default function UploadForm({ allTags }: Props) {
 
                     </ul>
 
-                    <div className="relative mt-4 inline-block">
+                    <div className="mt-4 flex items-center gap-2">
 
-                        <button
-                            onClick={() => setShowTagPicker(current => !current)}
-                            className="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700"
-                        >
-                            {selectedTagIds.length > 0
-                                ? `Tags (${selectedTagIds.length})`
-                                : "Tags auswählen"}
-                        </button>
+                        <div className="relative inline-block">
 
-                        {showTagPicker && (
-                            <TagPicker
-                                currentTagIds={selectedTagIds}
-                                allTags={allTags}
-                                onSave={saveTagSelection}
-                            />
-                        )}
+                            <button
+                                onClick={() => setShowTagPicker(current => !current)}
+                                className="flex items-center gap-1.5 rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                            >
+                                <Tags className="size-4" />
+                                {selectedTagIds.length > 0
+                                    ? `Tags (${selectedTagIds.length})`
+                                    : "Tags auswählen"}
+                            </button>
 
-                    </div>
+                            {showTagPicker && (
+                                <TagPicker
+                                    currentTagIds={selectedTagIds}
+                                    allTags={allTags}
+                                    onSave={saveTagSelection}
+                                />
+                            )}
 
-                    <div>
+                        </div>
+
                         <button
                             onClick={upload}
                             disabled={uploading}
-                            className="mt-4 rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+                            className="flex items-center gap-1.5 rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
                         >
+                            <UploadCloud className="size-4" />
                             {uploading
-                                ? "Upload läuft..."
+                                ? "Upload läuft…"
                                 : "Zu Cloudflare hochladen"}
                         </button>
+
                     </div>
 
                 </div>

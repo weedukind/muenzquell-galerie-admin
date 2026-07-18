@@ -6,9 +6,9 @@ interface Props {
 export default function ProgressBar({ percent, error = false }: Props) {
 
     return (
-        <div className="h-2 w-full rounded bg-gray-200">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
             <div
-                className={`h-2 rounded transition-all ${error ? "bg-red-600" : "bg-blue-600"}`}
+                className={`h-full rounded-full transition-all duration-300 ${error ? "bg-red-500" : "bg-blue-600"}`}
                 style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
             />
         </div>

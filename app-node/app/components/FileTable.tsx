@@ -5,6 +5,7 @@ import { UploadRecord } from "@/types/upload";
 import { TagRecord } from "@/types/tag";
 import { formatSize } from "@/lib/formatSize";
 import { toCsv, downloadCsv } from "@/lib/csv";
+import { Download, ExternalLink } from "lucide-react";
 import { useSelection } from "@/hooks/useSelection";
 import TagEditor from "./TagEditor";
 import TagFilterBar from "./TagFilterBar";
@@ -90,8 +91,9 @@ export default function FileTable({uploads, allTags}: FileTableProps) {
                 <button
                     onClick={exportCsv}
                     disabled={filteredUploads.length === 0}
-                    className="rounded bg-green-600 px-3 py-1 text-white hover:bg-green-700 disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
                 >
+                    <Download className="size-4" />
                     Als CSV exportieren
                 </button>
 
@@ -104,55 +106,57 @@ export default function FileTable({uploads, allTags}: FileTableProps) {
                 onReset={() => setActiveTagFilters([])}
             />
 
-            <table className="min-w-full border border-gray-300 border-collapse">
+            <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
+            <table className="min-w-full divide-y divide-gray-200">
 
-            <thead className="bg-gray-100 text-black">
+            <thead className="bg-gray-50">
 
             <tr>
-                <th className="border border-gray-300 p-2 text-center">
+                <th className="w-10 p-3 text-center">
                     <input
                         type="checkbox"
                         checked={allSelected}
                         onChange={toggleAll}
                         aria-label="Alle auswählen"
+                        className="size-4 accent-blue-600"
                     />
                 </th>
 
-                <th className="border border-gray-300 p-2 text-left">
+                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Name
                 </th>
 
-                <th className="border border-gray-300 p-2 text-right">
+                <th className="p-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Größe
                 </th>
 
-                <th className="border border-gray-300 p-2 text-right">
+                <th className="p-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Maße
                 </th>
 
-                <th className="border border-gray-300 p-2 text-left">
+                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Typ
                 </th>
 
-                <th className="border border-gray-300 p-2 text-left">
+                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Hochgeladen
                 </th>
 
-                <th className="border border-gray-300 p-2 text-left">
+                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Datei
                 </th>
             </tr>
 
             </thead>
 
-            <tbody>
+            <tbody className="divide-y divide-gray-200 bg-white">
 
             {activeTagFilters.length > 0 && filteredUploads.length === 0 && (
 
                 <tr>
                     <td
                         colSpan={7}
-                        className="border border-gray-300 p-2 text-center text-gray-500"
+                        className="p-6 text-center text-sm text-gray-500"
                     >
                         Keine Bilder mit allen ausgewählten Tags gefunden.
                     </td>
@@ -164,51 +168,53 @@ export default function FileTable({uploads, allTags}: FileTableProps) {
 
                 <tr
                     key={upload.id}
-                    className="hover:bg-gray-50"
+                    className="transition-colors hover:bg-gray-50"
                 >
 
-                    <td className="border border-gray-300 p-2 text-center">
+                    <td className="p-3 text-center">
                         <input
                             type="checkbox"
                             checked={selectedIds.includes(upload.id!)}
                             onChange={() => toggleOne(upload.id!)}
                             aria-label={`${upload.name} auswählen`}
+                            className="size-4 accent-blue-600"
                         />
                     </td>
 
-                    <td className="border border-gray-300 p-2">
-                        <div className="mb-1">{upload.name}</div>
+                    <td className="p-3">
+                        <div className="mb-1 font-medium text-gray-900">{upload.name}</div>
                         <TagEditor
                             tags={upload.tags ?? []}
                         />
                     </td>
 
-                    <td className="border border-gray-300 p-2 text-right">
+                    <td className="p-3 text-right text-gray-600">
                         {formatSize(upload.size)}
                     </td>
 
-                    <td className="border border-gray-300 p-2 text-right">
+                    <td className="p-3 text-right text-gray-600">
                         {upload.width && upload.height
                             ? `${upload.width} × ${upload.height}`
                             : "—"}
                     </td>
 
-                    <td className="border border-gray-300 p-2">
+                    <td className="p-3 text-gray-600">
                         {upload.mimeType}
                     </td>
 
-                    <td className="border border-gray-300 p-2">
+                    <td className="p-3 text-gray-600">
                         {upload.createdAtFormatted}
                     </td>
 
-                    <td className="border border-gray-300 p-2">
+                    <td className="p-3">
                         <a
                             href={upload.publicUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-blue-600 hover:underline"
+                            className="inline-flex items-center gap-1 text-blue-600 hover:underline"
                         >
                             Öffnen
+                            <ExternalLink className="size-3.5" />
                         </a>
                     </td>
 
@@ -219,6 +225,7 @@ export default function FileTable({uploads, allTags}: FileTableProps) {
             </tbody>
 
             </table>
+            </div>
 
         </div>
     );

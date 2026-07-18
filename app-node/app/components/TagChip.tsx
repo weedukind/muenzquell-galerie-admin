@@ -16,7 +16,7 @@ export default function TagChip({ tag, active, onClick }: Props) {
 
     if (!onClick) {
         return (
-            <span className="rounded px-2 py-0.5 text-xs" style={style}>
+            <span className="rounded-full px-2.5 py-0.5 text-xs font-medium" style={style}>
                 {tag.name}
             </span>
         );
@@ -25,7 +25,7 @@ export default function TagChip({ tag, active, onClick }: Props) {
     return (
         <button
             onClick={onClick}
-            className="rounded px-2 py-0.5 text-xs"
+            className="rounded-full px-2.5 py-0.5 text-xs font-medium transition-transform hover:scale-105"
             style={style}
         >
             {tag.name}

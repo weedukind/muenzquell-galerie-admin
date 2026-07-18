@@ -9,9 +9,9 @@ interface Props {
 export default function FileManager({ uploads, allTags }: Props) {
 
     return (
-        <div className="p-6">
+        <div className="mx-auto max-w-7xl p-6">
 
-            <h1 className="mb-6 text-3xl font-bold">
+            <h1 className="mb-6 text-2xl font-semibold tracking-tight text-gray-900">
                 Uploads
             </h1>
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Tags } from "lucide-react";
 import { UploadRecord } from "@/types/upload";
 import { TagRecord } from "@/types/tag";
 import { assignTag, unassignTag } from "@/lib/api";
@@ -54,8 +55,9 @@ export default function BulkTagButton({ selectedUploads, allTags }: Props) {
             <button
                 onClick={() => setShowPicker(current => !current)}
                 disabled={!canEdit}
-                className="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
+                <Tags className="size-4" />
                 Tags bearbeiten
             </button>
 
