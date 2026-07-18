@@ -9,3 +9,6 @@
 
 # OS
 .DS_Store
+
+# local notes with live credentials, never check in
+/vercel/access.txt
