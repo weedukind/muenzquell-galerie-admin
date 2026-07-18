@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { UploadCloud, Tags, FileIcon, CheckCircle2, XCircle } from "lucide-react";
+import { UploadCloud, FileIcon, CheckCircle2, XCircle } from "lucide-react";
 import { TagRecord } from "@/types/tag";
 import { assignTag, uploadFileWithProgress } from "@/lib/api";
-import TagPicker from "./TagPicker";
+import { settleAll } from "@/lib/bulkAction";
+import TagPickerButton from "./TagPickerButton";
 import ProgressBar from "./ProgressBar";
 
 interface Props {
@@ -24,18 +25,12 @@ export default function UploadForm({ allTags }: Props) {
     const [fileStates, setFileStates] = useState<FileState[]>([]);
     const [uploading, setUploading] = useState(false);
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
-    const [showTagPicker, setShowTagPicker] = useState(false);
 
     function onSelectFiles(e: React.ChangeEvent<HTMLInputElement>) {
         if (!e.target.files) return;
         const files = Array.from(e.target.files);
         setSelectedFiles(files);
         setFileStates(files.map(() => ({ progress: 0, error: false })));
-    }
-
-    function saveTagSelection(tagIds: number[]) {
-        setSelectedTagIds(tagIds);
-        setShowTagPicker(false);
     }
 
     function updateFileState(index: number, patch: Partial<FileState>) {
@@ -51,7 +46,7 @@ export default function UploadForm({ allTags }: Props) {
 
         setUploading(true);
 
-        const results = await Promise.allSettled(
+        const { results, failureCount } = await settleAll(
             selectedFiles.map((file, index) =>
                 uploadFileWithProgress(file, pct => updateFileState(index, { progress: pct }))
             )
@@ -72,10 +67,8 @@ export default function UploadForm({ allTags }: Props) {
             }
         }
 
-        const failedCount = results.length - uploaded.length;
-
-        if (failedCount > 0) {
-            alert(`${failedCount} Datei(en) konnten nicht hochgeladen werden.`);
+        if (failureCount > 0) {
+            alert(`${failureCount} Datei(en) konnten nicht hochgeladen werden.`);
         }
 
         if (selectedTagIds.length > 0 && uploaded.length > 0) {
@@ -86,7 +79,7 @@ export default function UploadForm({ allTags }: Props) {
             );
         }
 
-        if (failedCount === 0) {
+        if (failureCount === 0) {
             router.push("/");
         }
     }
@@ -156,27 +149,14 @@ export default function UploadForm({ allTags }: Props) {
 
                     <div className="mt-4 flex items-center gap-2">
 
-                        <div className="relative inline-block">
-
-                            <button
-                                onClick={() => setShowTagPicker(current => !current)}
-                                className="flex items-center gap-1.5 rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
-                            >
-                                <Tags className="size-4" />
-                                {selectedTagIds.length > 0
-                                    ? `Tags (${selectedTagIds.length})`
-                                    : "Tags auswählen"}
-                            </button>
-
-                            {showTagPicker && (
-                                <TagPicker
-                                    currentTagIds={selectedTagIds}
-                                    allTags={allTags}
-                                    onSave={saveTagSelection}
-                                />
-                            )}
-
-                        </div>
+                        <TagPickerButton
+                            label={selectedTagIds.length > 0
+                                ? `Tags (${selectedTagIds.length})`
+                                : "Tags auswählen"}
+                            currentTagIds={selectedTagIds}
+                            allTags={allTags}
+                            onSave={setSelectedTagIds}
+                        />
 
                         <button
                             onClick={upload}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { deleteUpload } from "@/lib/api";
+import { settleAll } from "@/lib/bulkAction";
 
 interface Props {
     selectedIds: number[];
@@ -25,13 +26,11 @@ export default function BulkDeleteButton({ selectedIds, onDeleted }: Props) {
 
         setDeleting(true);
 
-        const results = await Promise.allSettled(
-            selectedIds.map(id => deleteUpload(id))
-        );
+        const { failureCount } = await settleAll(selectedIds.map(id => deleteUpload(id)));
 
         setDeleting(false);
 
-        if (results.some(result => result.status === "rejected")) {
+        if (failureCount > 0) {
             alert("Nicht alle Dateien konnten gelöscht werden.");
         }
 
