@@ -1,0 +1,37 @@
+services:
+  node:
+    image: node-lts
+    build:
+      context: .
+      dockerfile: docker/node/Dockerfile
+    container_name: muenzquell-node
+    stdin_open: true
+    tty: true
+    ports:
+      - "8081:8081"
+      - "3000:3000"
+      - "19006:19006"
+    volumes:
+      - ./app-node:/app
+
+#  php:
+#    image: sarkan-php-8.4
+#    build:
+#      context: .
+#      dockerfile: docker/php/Dockerfile
+#    container_name: sarkan-php
+#    stdin_open: true
+#    tty: true
+#    ports:
+#      - "9080:80"
+#    volumes:
+#      - ./app-php:/app
+
+#  web:
+#    image: nginx
+#    container_name: sarkan-web
+#    volumes:
+#      - ./backend:/usr/share/nginx/html
+#      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+#    ports:
+#      - "8080:80"

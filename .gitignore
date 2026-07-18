@@ -1,0 +1,11 @@
+# IDE
+/.idea/
+
+# Claude Code local session state
+/.claude/
+
+# bind-mounted MariaDB data directory
+/docker/db/data/
+
+# OS
+.DS_Store
