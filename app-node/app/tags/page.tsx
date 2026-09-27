@@ -1,7 +1,10 @@
+import { connection } from "next/server";
 import { getTagsWithUsageCounts } from "@/services/tagService";
 import TagManager from "../components/TagManager";
 
 export default async function TagsPage() {
+
+    await connection();
 
     const tags = await getTagsWithUsageCounts();
 

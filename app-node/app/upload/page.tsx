@@ -1,7 +1,10 @@
+import { connection } from "next/server";
 import { getTags } from "@/services/tagService";
 import UploadForm from "../components/UploadForm";
 
 export default async function UploadPage() {
+
+    await connection();
 
     const allTags = await getTags();
 
