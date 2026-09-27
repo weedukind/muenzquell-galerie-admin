@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This root is a docker-compose wrapper around one active application:
 
-- `app-node/` — the actual application: a Next.js 16 (App Router) app called "Cloud Upload Manager". It used to be its own separate nested git repository; it's now tracked as regular files in this root repository (its prior standalone history remains at `github.com/weedukind/gallery`).
+- `app-node/` — the actual application: a Next.js 16 (App Router) app called "Cloud Upload Manager". It used to be its own separate nested git repository; it's now tracked as regular files in this root repository (its prior standalone history was not carried over).
 - `docker-compose.yml` — defines only the `node` service (builds `docker/node/Dockerfile`, mounts `./app-node` at `/app`, exposes 8081/3000/19006). There are commented-out `php` and `web` (nginx) services that are not implemented — ignore them unless asked to build them out. There used to be a `db` service (MariaDB) here; the app has since migrated its data layer to Cloudflare D1 (see "Data layer" below), so that service was removed. `docker/db/data` may still exist on disk from that era but is no longer used.
 - `docker/node/Dockerfile` — plain `node:lts` image; its `CMD` just idles (`tail -f /dev/null`), so commands must be run via `docker compose exec node <cmd>` rather than relying on a container entrypoint.
 
