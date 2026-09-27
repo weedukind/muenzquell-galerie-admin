@@ -9,6 +9,7 @@ A Next.js app for uploading images to Cloudflare R2, storing their metadata in C
 - Tag images individually or in bulk, create new tags on the fly — including right at upload time, before the files exist
 - Dedicated tag management page: create, rename, recolor, and delete tags, with a usage count per tag
 - Attributes (e.g. Event, Jahr, Creator): each image must have exactly one option per attribute type — required at upload time and on the image edit page (`/uploads/[id]`); types and options are managed at `/attributes`
+- User management for the public frontend's users (`/users`): overview with e-mail, display name, status, inviter and last login; lock and unlock users
 - Deleting an image removes both the R2 object and the DB row; tag associations are cleaned up automatically via `ON DELETE CASCADE`
 
 ## Getting started
@@ -51,7 +52,7 @@ Tables, constraints and the rules for tags and attributes are described in [docs
 ## Project structure
 
 - `app/` — routes, pages, and client components (App Router)
-- `services/` — database access (`uploadService`, `tagService`, `attributeService`) and R2 storage (`storageService`)
+- `services/` — database access (`uploadService`, `tagService`, `attributeService`, `userService`) and R2 storage (`storageService`)
 - `lib/` — `db.ts` (Cloudflare D1 HTTP API client), `r2.ts` (S3 client for R2), `attributes.ts` (attribute validation), `csv.ts` (CSV export helper), `formatSize.ts`
 - `hooks/` — shared client hooks (`useSelection`)
 - `docs/` — project documentation (data model)

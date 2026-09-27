@@ -170,6 +170,15 @@ export async function saveUploadAttributes(uploadId: number, values: AttributeVa
     );
 }
 
+export async function setUserLocked(id: number, isLocked: boolean): Promise<void> {
+    await jsonRequest(
+        `/api/users/${id}`,
+        "PATCH",
+        { isLocked },
+        "Status konnte nicht geändert werden."
+    );
+}
+
 export function uploadFileWithProgress(
     file: File,
     attributes: AttributeValues,

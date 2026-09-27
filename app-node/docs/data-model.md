@@ -10,6 +10,7 @@ erDiagram
     attribute_types ||--o{ attribute_options : "offers"
     attribute_types ||--o{ upload_attributes : "value for"
     attribute_options ||--o{ upload_attributes : "chosen as"
+    users |o--o{ users : "invited"
 
     uploads {
         INTEGER id PK
@@ -46,6 +47,15 @@ erDiagram
         INTEGER upload_id PK, FK
         INTEGER attribute_type_id PK, FK
         INTEGER option_id FK
+    }
+    users {
+        INTEGER id PK
+        VARCHAR email UK
+        VARCHAR display_name UK
+        INTEGER is_locked
+        TEXT last_login_at
+        INTEGER invited_by FK
+        TEXT created_at
     }
 ```
 
@@ -113,6 +123,22 @@ The value an image has for an attribute type.
 | `attribute_type_id` | `INTEGER` FK → `attribute_types.id` | `ON DELETE CASCADE` |
 | `option_id` | `INTEGER` | with `attribute_type_id`: FK → `attribute_options (id, attribute_type_id)` |
 
+### `users` (`0006`, `0007`)
+
+Users of the public frontend (`muenzquell-fe`). They are created and log in there, and are managed in this backend at `/users`, where they can be locked and unlocked.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `INTEGER` PK | autoincrement |
+| `email` | `VARCHAR(255)` | unique, case-insensitive (`COLLATE NOCASE`) |
+| `display_name` | `VARCHAR(100)` | unique, case-insensitive (unique index `idx_users_display_name`, `COLLATE NOCASE`) |
+| `is_locked` | `INTEGER` | `0` = active, `1` = locked; `CHECK (is_locked IN (0, 1))` |
+| `last_login_at` | `TEXT` | ISO 8601 UTC, set by the frontend on login. `NULL` means the user has never logged in, i.e. the invitation hasn't been accepted yet |
+| `invited_by` | `INTEGER` FK → `users.id` | the user who sent the invitation; `NULL` for users nobody invited. `ON DELETE SET NULL`: deleting the inviter keeps the invited user |
+| `created_at` | `TEXT` | ISO 8601 UTC, set by the database |
+
+The database only stores the lock. Refusing login for locked users is the job of the frontend's login.
+
 ## Rules for attribute values
 
 **At most one value per type** is enforced by the database: the primary key is `(upload_id, attribute_type_id)`. Saving a new value replaces the old one (`INSERT … ON CONFLICT … DO UPDATE`).
@@ -136,6 +162,7 @@ An attribute type without options blocks both uploading and saving, because no v
 | Tag | its `upload_tags` rows are deleted |
 | Attribute type | its options and all image values for it are deleted (the UI asks for confirmation) |
 | Attribute option | **refused (`409`) while any image still uses it**; reassign those images first |
+| User | users they invited keep existing, their `invited_by` becomes `NULL` |
 
 ## Code
 
@@ -145,3 +172,4 @@ An attribute type without options blocks both uploading and saving, because no v
 | Uploads | `services/uploadService.ts`, `types/upload.ts` |
 | Tags | `services/tagService.ts`, `types/tag.ts` |
 | Attributes | `services/attributeService.ts`, `types/attribute.ts`, `lib/attributes.ts` (validation) |
+| Users | `services/userService.ts`, `types/user.ts` |
