@@ -8,6 +8,7 @@ A Next.js app for uploading images to Cloudflare R2, storing their metadata in C
 - Overview table with bulk selection: bulk delete, bulk tag editing, an AND-based tag filter (clickable chips), and CSV export of the currently filtered uploads
 - Tag images individually or in bulk, create new tags on the fly — including right at upload time, before the files exist
 - Dedicated tag management page: create, rename, recolor, and delete tags, with a usage count per tag
+- Attributes (e.g. Event, Jahr, Creator): each image must have exactly one option per attribute type — required at upload time and on the image edit page (`/uploads/[id]`); types and options are managed at `/attributes`
 - Deleting an image removes both the R2 object and the DB row; tag associations are cleaned up automatically via `ON DELETE CASCADE`
 
 ## Getting started
@@ -38,6 +39,8 @@ npm run migrate
 
 The runner tracks applied migrations in a `schema_migrations` table and only runs the ones that aren't recorded yet, so it's safe to re-run.
 
+Tables, constraints and the rules for tags and attributes are described in [docs/data-model.md](docs/data-model.md).
+
 ## Commands
 
 - `npm run dev` — start the dev server on port 3000
@@ -48,8 +51,9 @@ The runner tracks applied migrations in a `schema_migrations` table and only run
 ## Project structure
 
 - `app/` — routes, pages, and client components (App Router)
-- `services/` — database access (`uploadService`, `tagService`) and R2 storage (`storageService`)
-- `lib/` — `db.ts` (Cloudflare D1 HTTP API client), `r2.ts` (S3 client for R2), `csv.ts` (CSV export helper), `formatSize.ts`
+- `services/` — database access (`uploadService`, `tagService`, `attributeService`) and R2 storage (`storageService`)
+- `lib/` — `db.ts` (Cloudflare D1 HTTP API client), `r2.ts` (S3 client for R2), `attributes.ts` (attribute validation), `csv.ts` (CSV export helper), `formatSize.ts`
 - `hooks/` — shared client hooks (`useSelection`)
+- `docs/` — project documentation (data model)
 - `migrations/` — numbered SQL schema migrations, run via `scripts/migrate.mjs`
 - `types/` — shared TypeScript types
