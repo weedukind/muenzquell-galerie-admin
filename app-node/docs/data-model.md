@@ -11,6 +11,8 @@ erDiagram
     attribute_types ||--o{ upload_attributes : "value for"
     attribute_options ||--o{ upload_attributes : "chosen as"
     users |o--o{ users : "invited"
+    users ||--o{ login_codes : "requested"
+    users ||--o{ sessions : "logged in with"
 
     uploads {
         INTEGER id PK
@@ -55,6 +57,20 @@ erDiagram
         INTEGER is_locked
         TEXT last_login_at
         INTEGER invited_by FK
+        TEXT created_at
+    }
+    login_codes {
+        INTEGER id PK
+        INTEGER user_id FK
+        VARCHAR code_hash
+        INTEGER attempts
+        TEXT expires_at
+        TEXT created_at
+    }
+    sessions {
+        VARCHAR token_hash PK
+        INTEGER user_id FK
+        TEXT expires_at
         TEXT created_at
     }
 ```
@@ -139,6 +155,34 @@ Users of the public frontend (`muenzquell-fe`). They are created and log in ther
 
 The database only stores the lock. Refusing login for locked users is the job of the frontend's login.
 
+### `login_codes` (`0008`)
+
+One-time codes for the frontend's login: a user enters their e-mail or display name, receives a code by e-mail and logs in with it. Written and read only by the frontend.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `INTEGER` PK | autoincrement |
+| `user_id` | `INTEGER` FK → `users.id` | `ON DELETE CASCADE` |
+| `code_hash` | `VARCHAR(64)` | keyed hash of the code, never the code itself |
+| `attempts` | `INTEGER` | failed attempts; the frontend rejects the code once the limit is reached |
+| `expires_at` | `TEXT` | ISO 8601 UTC |
+| `created_at` | `TEXT` | ISO 8601 UTC, set by the database; also used to throttle new codes |
+
+Only the newest code of a user is valid: requesting a new one deletes the previous ones, a successful login deletes the used one.
+
+### `sessions` (`0008`)
+
+Logged-in sessions of the frontend. The browser holds a random token in a cookie; the database stores only its hash.
+
+| Column | Type | Notes |
+|---|---|---|
+| `token_hash` | `VARCHAR(64)` PK | SHA-256 of the session token |
+| `user_id` | `INTEGER` FK → `users.id` | `ON DELETE CASCADE` |
+| `expires_at` | `TEXT` | ISO 8601 UTC |
+| `created_at` | `TEXT` | ISO 8601 UTC, set by the database |
+
+The frontend accepts a session only while it hasn't expired **and** its user isn't locked, so locking a user in this backend ends their sessions immediately.
+
 ## Rules for attribute values
 
 **At most one value per type** is enforced by the database: the primary key is `(upload_id, attribute_type_id)`. Saving a new value replaces the old one (`INSERT … ON CONFLICT … DO UPDATE`).
@@ -162,7 +206,7 @@ An attribute type without options blocks both uploading and saving, because no v
 | Tag | its `upload_tags` rows are deleted |
 | Attribute type | its options and all image values for it are deleted (the UI asks for confirmation) |
 | Attribute option | **refused (`409`) while any image still uses it**; reassign those images first |
-| User | users they invited keep existing, their `invited_by` becomes `NULL` |
+| User | users they invited keep existing, their `invited_by` becomes `NULL`; their `login_codes` and `sessions` are deleted |
 
 ## Code
 
