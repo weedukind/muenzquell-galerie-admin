@@ -1,10 +1,10 @@
 services:
   node:
-    image: node-lts
+    image: muenzquell-be-node
     build:
       context: .
       dockerfile: docker/node/Dockerfile
-    container_name: muenzquell-node
+    container_name: muenzquell-be-node
     stdin_open: true
     tty: true
     ports:
