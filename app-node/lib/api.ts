@@ -1,4 +1,5 @@
 import { TagRecord } from "@/types/tag";
+import { AttributeValues } from "@/types/attribute";
 
 export interface UploadedFile {
     id: number;
@@ -90,8 +91,88 @@ export async function deleteUpload(id: number): Promise<void> {
     );
 }
 
+export async function createAttributeType(name: string): Promise<void> {
+    await jsonRequest(
+        "/api/attributes",
+        "POST",
+        { name },
+        "Attribut-Typ konnte nicht erstellt werden."
+    );
+}
+
+export async function updateAttributeType(id: number, name: string): Promise<void> {
+    await jsonRequest(
+        `/api/attributes/${id}`,
+        "PATCH",
+        { name },
+        "Attribut-Typ konnte nicht aktualisiert werden."
+    );
+}
+
+export async function deleteAttributeType(id: number): Promise<void> {
+    await request(
+        `/api/attributes/${id}`,
+        { method: "DELETE" },
+        "Attribut-Typ konnte nicht gelöscht werden."
+    );
+}
+
+export async function reorderAttributeTypes(ids: number[]): Promise<void> {
+    await jsonRequest(
+        "/api/attributes/order",
+        "PUT",
+        { ids },
+        "Reihenfolge konnte nicht gespeichert werden."
+    );
+}
+
+export async function createAttributeOption(typeId: number, name: string): Promise<void> {
+    await jsonRequest(
+        `/api/attributes/${typeId}/options`,
+        "POST",
+        { name },
+        "Option konnte nicht erstellt werden."
+    );
+}
+
+export async function updateAttributeOption(id: number, name: string): Promise<void> {
+    await jsonRequest(
+        `/api/attribute-options/${id}`,
+        "PATCH",
+        { name },
+        "Option konnte nicht aktualisiert werden."
+    );
+}
+
+export async function deleteAttributeOption(id: number): Promise<void> {
+    await request(
+        `/api/attribute-options/${id}`,
+        { method: "DELETE" },
+        "Option konnte nicht gelöscht werden."
+    );
+}
+
+export async function reorderAttributeOptions(typeId: number, ids: number[]): Promise<void> {
+    await jsonRequest(
+        `/api/attributes/${typeId}/options/order`,
+        "PUT",
+        { ids },
+        "Reihenfolge konnte nicht gespeichert werden."
+    );
+}
+
+export async function saveUploadAttributes(uploadId: number, values: AttributeValues): Promise<void> {
+    await jsonRequest(
+        `/api/uploads/${uploadId}/attributes`,
+        "PUT",
+        { values },
+        "Attribute konnten nicht gespeichert werden."
+    );
+}
+
 export function uploadFileWithProgress(
     file: File,
+    attributes: AttributeValues,
     onProgress: (pct: number) => void
 ): Promise<UploadedFile> {
 
@@ -99,6 +180,7 @@ export function uploadFileWithProgress(
 
         const form = new FormData();
         form.append("files", file);
+        form.append("attributes", JSON.stringify(attributes));
 
         const xhr = new XMLHttpRequest();
 

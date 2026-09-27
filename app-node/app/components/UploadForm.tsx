@@ -4,13 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UploadCloud, FileIcon, CheckCircle2, XCircle } from "lucide-react";
 import { TagRecord } from "@/types/tag";
+import { AttributeType, AttributeValues } from "@/types/attribute";
+import { getMissingAttributeTypes } from "@/lib/attributes";
 import { assignTag, uploadFileWithProgress } from "@/lib/api";
 import { settleAll } from "@/lib/bulkAction";
 import TagPickerButton from "./TagPickerButton";
 import ProgressBar from "./ProgressBar";
+import AttributeSelects from "./AttributeSelects";
 
 interface Props {
     allTags: TagRecord[];
+    attributeTypes: AttributeType[];
 }
 
 interface FileState {
@@ -18,13 +22,16 @@ interface FileState {
     error: boolean;
 }
 
-export default function UploadForm({ allTags }: Props) {
+export default function UploadForm({ allTags, attributeTypes }: Props) {
 
     const router = useRouter();
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [fileStates, setFileStates] = useState<FileState[]>([]);
     const [uploading, setUploading] = useState(false);
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+    const [attributeValues, setAttributeValues] = useState<AttributeValues>({});
+
+    const missingAttributes = getMissingAttributeTypes(attributeTypes, attributeValues);
 
     function onSelectFiles(e: React.ChangeEvent<HTMLInputElement>) {
         if (!e.target.files) return;
@@ -41,14 +48,14 @@ export default function UploadForm({ allTags }: Props) {
 
     async function upload() {
 
-        if (selectedFiles.length === 0)
+        if (selectedFiles.length === 0 || missingAttributes.length > 0)
             return;
 
         setUploading(true);
 
         const { results, failureCount } = await settleAll(
             selectedFiles.map((file, index) =>
-                uploadFileWithProgress(file, pct => updateFileState(index, { progress: pct }))
+                uploadFileWithProgress(file, attributeValues, pct => updateFileState(index, { progress: pct }))
             )
         );
 
@@ -147,6 +154,20 @@ export default function UploadForm({ allTags }: Props) {
 
                     </ul>
 
+                    {attributeTypes.length > 0 && (
+                        <div className="mt-4 border-t border-gray-100 pt-4">
+                            <h2 className="mb-3 text-sm font-semibold text-gray-700">
+                                Attribute
+                            </h2>
+                            <AttributeSelects
+                                types={attributeTypes}
+                                values={attributeValues}
+                                onChange={setAttributeValues}
+                                disabled={uploading}
+                            />
+                        </div>
+                    )}
+
                     <div className="mt-4 flex items-center gap-2">
 
                         <TagPickerButton
@@ -160,7 +181,10 @@ export default function UploadForm({ allTags }: Props) {
 
                         <button
                             onClick={upload}
-                            disabled={uploading}
+                            disabled={uploading || missingAttributes.length > 0}
+                            title={missingAttributes.length > 0
+                                ? `Bitte zuerst auswählen: ${missingAttributes.map(type => type.name).join(", ")}`
+                                : undefined}
                             className="flex items-center gap-1.5 rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                             <UploadCloud className="size-4" />
@@ -168,6 +192,12 @@ export default function UploadForm({ allTags }: Props) {
                                 ? "Upload läuft…"
                                 : "Zu Cloudflare hochladen"}
                         </button>
+
+                        {missingAttributes.length > 0 && (
+                            <span className="text-xs text-amber-700">
+                                Bitte alle Attribute auswählen.
+                            </span>
+                        )}
 
                     </div>
 

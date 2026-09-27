@@ -4,12 +4,38 @@ import {
     deleteFile
 } from "@/services/storageService";
 import { randomUUID } from "crypto";
-import {insertUpload} from "@/services/uploadService";
+import {insertUpload, deleteUpload} from "@/services/uploadService";
+import { getAttributeTypes, setUploadAttributes } from "@/services/attributeService";
+import { parseAttributeValues, validateAttributeValues } from "@/lib/attributes";
 import { imageSize } from "image-size";
 
 export async function POST(req: Request) {
     const formData = await req.formData();
     const files = formData.getAll("files") as File[];
+
+    const attributes = (() => {
+        try {
+            return parseAttributeValues(JSON.parse(String(formData.get("attributes") ?? "{}")));
+        } catch {
+            return null;
+        }
+    })();
+
+    if (!attributes) {
+        return NextResponse.json(
+            { error: "Ungültige Attributwerte." },
+            { status: 400 }
+        );
+    }
+
+    const attributeError = validateAttributeValues(await getAttributeTypes(), attributes);
+
+    if (attributeError) {
+        return NextResponse.json(
+            { error: attributeError },
+            { status: 400 }
+        );
+    }
 
     const result = [];
 
@@ -38,7 +64,7 @@ export async function POST(req: Request) {
             file.type
         );
 
-        let id: number;
+        let id: number | null = null;
 
         try {
 
@@ -52,7 +78,13 @@ export async function POST(req: Request) {
                 height
             });
 
+            await setUploadAttributes(id, attributes);
+
         } catch (err) {
+
+            if (id !== null) {
+                await deleteUpload(id);
+            }
 
             await deleteFile(objectKey);
 

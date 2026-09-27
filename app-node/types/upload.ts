@@ -1,4 +1,5 @@
 import {TagRecord} from "@/types/tag";
+import {AttributeValues} from "@/types/attribute";
 
 export interface UploadRecord {
     id?: number;
@@ -12,4 +13,5 @@ export interface UploadRecord {
     created_at?: string;
     createdAtFormatted?: string;
     tags?: TagRecord[];
+    attributes?: AttributeValues;
 }

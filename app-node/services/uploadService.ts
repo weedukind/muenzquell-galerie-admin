@@ -1,6 +1,7 @@
 import db from "@/lib/db";
 import { UploadRecord } from "@/types/upload";
 import { getTagsForUploads } from "./tagService";
+import { getAttributeValuesForUploads } from "./attributeService";
 
 export async function insertUpload(upload: UploadRecord): Promise<number> {
 
@@ -56,9 +57,11 @@ export async function getUploads(): Promise<UploadRecord[]> {
     }
 
     const tags = await getTagsForUploads();
+    const attributes = await getAttributeValuesForUploads();
 
     for (const upload of uploads) {
         upload.tags = tags.get(upload.id!) ?? [];
+        upload.attributes = attributes.get(upload.id!) ?? {};
     }
 
     return uploads;

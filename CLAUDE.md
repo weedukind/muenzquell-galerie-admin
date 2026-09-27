@@ -34,6 +34,9 @@ Request flow for the core feature (upload a file → store in R2 → record meta
 3. The home page (`app/page.tsx`) is a server component that calls `getUploads()` directly (not through the API route) and renders `FileManager` → `FileTable`, listing uploads with their tags joined in.
 4. Deletion: `DeleteButton` calls `DELETE /api/upload/[id]`, which deletes both the R2 object and the DB row.
 5. Tags: `services/tagService.ts` implements `getTags` / `createTag` / `assignTag` / `removeTag` / `getTagsForUploads` against `tags` and `upload_tags` tables, and `app/api/tags/route.ts` / `app/api/uploads/tags/route.ts` expose some of this. There is no UI yet to create or assign tags — this layer is wired at the service/DB level only, not surfaced in components.
+6. Attributes: `services/attributeService.ts` manages `attribute_types` / `attribute_options` / `upload_attributes` (managed at `/attributes`). Every upload must have exactly one option per attribute type — `upload_attributes` has PK `(upload_id, attribute_type_id)`, but completeness can't be enforced by the DB (a newly added type has no values yet), so it is checked in `validateAttributeValues` (`lib/attributes.ts`) on `POST /api/upload` and `PUT /api/uploads/[id]/attributes` (edit page `/uploads/[id]`).
+
+Pages that read from D1 call `await connection()` (from `next/server`) first — otherwise `next build` prerenders them statically and bakes in build-time data.
 
 ## Data layer
 

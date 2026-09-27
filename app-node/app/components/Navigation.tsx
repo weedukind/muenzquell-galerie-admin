@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Cloud, LayoutGrid, Upload, Tags } from "lucide-react";
+import { Cloud, LayoutGrid, Upload, Tags, ListChecks } from "lucide-react";
 
 export default function Navigation() {
 
@@ -37,6 +37,14 @@ export default function Navigation() {
                     >
                         <Tags className="size-4" />
                         Tag-Verwaltung
+                    </Link>
+
+                    <Link
+                        href="/attributes"
+                        className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                        <ListChecks className="size-4" />
+                        Attribut-Verwaltung
                     </Link>
 
                 </div>

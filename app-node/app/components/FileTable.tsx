@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { UploadRecord } from "@/types/upload";
 import { TagRecord } from "@/types/tag";
+import { AttributeType, AttributeValues } from "@/types/attribute";
+import { getMissingAttributeTypes } from "@/lib/attributes";
 import { formatSize } from "@/lib/formatSize";
 import { toCsv, downloadCsv } from "@/lib/csv";
-import { Download, ExternalLink } from "lucide-react";
+import { Download, ExternalLink, AlertTriangle } from "lucide-react";
 import { useSelection } from "@/hooks/useSelection";
 import TagEditor from "./TagEditor";
 import TagFilterBar from "./TagFilterBar";
@@ -15,9 +18,14 @@ import BulkTagButton from "./BulkTagButton";
 interface FileTableProps {
     uploads: UploadRecord[];
     allTags: TagRecord[];
+    attributeTypes: AttributeType[];
 }
 
-export default function FileTable({uploads, allTags}: FileTableProps) {
+export default function FileTable({uploads, allTags, attributeTypes}: FileTableProps) {
+
+    function optionName(type: AttributeType, values: AttributeValues | undefined): string | undefined {
+        return type.options.find(option => option.id === values?.[type.id])?.name;
+    }
 
     const [activeTagFilters, setActiveTagFilters] = useState<number[]>([]);
 
@@ -49,10 +57,20 @@ export default function FileTable({uploads, allTags}: FileTableProps) {
 
     function exportCsv() {
 
-        const headers = ["Name", "Größe", "Maße", "Typ", "Hochgeladen", "Tags", "Link"];
+        const headers = [
+            "Name",
+            ...attributeTypes.map(type => type.name),
+            "Größe",
+            "Maße",
+            "Typ",
+            "Hochgeladen",
+            "Tags",
+            "Link"
+        ];
 
         const rows = filteredUploads.map(upload => [
             upload.name,
+            ...attributeTypes.map(type => optionName(type, upload.attributes) ?? ""),
             formatSize(upload.size),
             upload.width && upload.height ? `${upload.width} × ${upload.height}` : "",
             upload.mimeType,
@@ -126,6 +144,15 @@ export default function FileTable({uploads, allTags}: FileTableProps) {
                     Name
                 </th>
 
+                {attributeTypes.map(type => (
+                    <th
+                        key={type.id}
+                        className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"
+                    >
+                        {type.name}
+                    </th>
+                ))}
+
                 <th className="p-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Größe
                 </th>
@@ -155,7 +182,7 @@ export default function FileTable({uploads, allTags}: FileTableProps) {
 
                 <tr>
                     <td
-                        colSpan={7}
+                        colSpan={7 + attributeTypes.length}
                         className="p-6 text-center text-sm text-gray-500"
                     >
                         Keine Bilder mit allen ausgewählten Tags gefunden.
@@ -182,11 +209,28 @@ export default function FileTable({uploads, allTags}: FileTableProps) {
                     </td>
 
                     <td className="p-3">
-                        <div className="mb-1 font-medium text-gray-900">{upload.name}</div>
+                        <Link
+                            href={`/uploads/${upload.id}`}
+                            className="mb-1 block font-medium text-gray-900 hover:text-blue-600 hover:underline"
+                        >
+                            {upload.name}
+                        </Link>
+                        {getMissingAttributeTypes(attributeTypes, upload.attributes ?? {}).length > 0 && (
+                            <span className="mb-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                                <AlertTriangle className="size-3" />
+                                Attribute fehlen
+                            </span>
+                        )}
                         <TagEditor
                             tags={upload.tags ?? []}
                         />
                     </td>
+
+                    {attributeTypes.map(type => (
+                        <td key={type.id} className="p-3 text-gray-600">
+                            {optionName(type, upload.attributes) ?? "—"}
+                        </td>
+                    ))}
 
                     <td className="p-3 text-right text-gray-600">
                         {formatSize(upload.size)}

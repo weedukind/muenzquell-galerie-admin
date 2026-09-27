@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { getTags } from "@/services/tagService";
+import { getAttributeTypes } from "@/services/attributeService";
 import UploadForm from "../components/UploadForm";
 
 export default async function UploadPage() {
@@ -7,6 +8,7 @@ export default async function UploadPage() {
     await connection();
 
     const allTags = await getTags();
+    const attributeTypes = await getAttributeTypes();
 
     return (
         <div className="mx-auto max-w-3xl p-6">
@@ -15,7 +17,7 @@ export default async function UploadPage() {
                 Upload
             </h1>
 
-            <UploadForm allTags={allTags} />
+            <UploadForm allTags={allTags} attributeTypes={attributeTypes} />
 
         </div>
     );
