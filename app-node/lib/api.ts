@@ -179,6 +179,14 @@ export async function setUserLocked(id: number, isLocked: boolean): Promise<void
     );
 }
 
+export async function logoutUser(id: number): Promise<void> {
+    await request(
+        `/api/users/${id}/sessions`,
+        { method: "DELETE" },
+        "Benutzer konnte nicht ausgeloggt werden."
+    );
+}
+
 export function uploadFileWithProgress(
     file: File,
     attributes: AttributeValues,
