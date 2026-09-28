@@ -96,7 +96,13 @@ curl -X PATCH \
 
 ## 7. Optional: Production-Deploys auf einen bestimmten Branch beschränken
 
-- **Welcher Branch als "Production" zählt**, ist nur über das Dashboard änderbar: Settings → Git → Production Branch. Mehrere API-Varianten wurden probiert (`productionBranch` top-level, unter `link`, eigener `/link`-Endpunkt) — keine wurde akzeptiert. Das scheint aktuell ein reiner Dashboard-Schritt zu sein.
+- **Welcher Branch als "Production" zählt**, lässt sich über einen eigenen API-Endpunkt ändern (`productionBranch` im normalen Projekt-PATCH wird dagegen nicht akzeptiert):
+
+```bash
+npx vercel api "/v9/projects/<projectId>/branch?teamId=<teamId>" -X PATCH --input <(echo '{"branch":"production"}')
+```
+
+  Kontrolle: `link.productionBranch` in `GET /v9/projects/<projectId>`. Den Branch vorher anlegen und pushen.
 - **Deployments für andere Branches komplett unterdrücken** (nicht nur "kein Production-Ziel", sondern gar kein Build) geht über den *Ignored Build Step*, per API-Feld `commandForIgnoringBuildStep`:
 
 ```bash
