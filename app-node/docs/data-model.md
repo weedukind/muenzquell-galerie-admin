@@ -181,7 +181,13 @@ Logged-in sessions of the frontend. The browser holds a random token in a cookie
 | `expires_at` | `TEXT` | ISO 8601 UTC |
 | `created_at` | `TEXT` | ISO 8601 UTC, set by the database |
 
-The frontend accepts a session only while it hasn't expired **and** its user isn't locked, so locking a user in this backend ends their sessions immediately.
+The frontend accepts a session only while it hasn't expired **and** its user isn't locked. It looks the session up on every request, so deleting the row logs the user out immediately.
+
+The backend uses this table read-and-delete only:
+
+- `/users` shows a user as logged in while they have at least one unexpired session. That means a valid login, not necessarily that someone is using the site right now; there is no last-activity timestamp.
+- **Ausloggen** (`DELETE /api/users/[id]/sessions`) deletes all sessions of the user.
+- **Sperren** also deletes the user's sessions, so unlocking later doesn't revive them.
 
 ## Rules for attribute values
 

@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, LockOpen } from "lucide-react";
+import { Lock, LockOpen, LogOut } from "lucide-react";
 import { UserRecord } from "@/types/user";
-import { setUserLocked } from "@/lib/api";
+import { setUserLocked, logoutUser } from "@/lib/api";
 import { formatDateTime } from "@/lib/formatDateTime";
 
 interface Props {
@@ -22,7 +22,7 @@ export default function UserTable({ users }: Props) {
 
         const locking = !user.isLocked;
 
-        if (locking && !confirm(`"${user.displayName}" (${user.email}) wirklich sperren?`))
+        if (locking && !confirm(`"${user.displayName}" (${user.email}) wirklich sperren? Der Benutzer wird dabei auch ausgeloggt.`))
             return;
 
         setBusyId(user.id);
@@ -32,6 +32,23 @@ export default function UserTable({ users }: Props) {
             router.refresh();
         } catch (err) {
             alert(err instanceof Error ? err.message : "Status konnte nicht geändert werden.");
+        }
+
+        setBusyId(null);
+    }
+
+    async function logout(user: UserRecord) {
+
+        if (!confirm(`"${user.displayName}" auf allen Geräten ausloggen?`))
+            return;
+
+        setBusyId(user.id);
+
+        try {
+            await logoutUser(user.id);
+            router.refresh();
+        } catch (err) {
+            alert(err instanceof Error ? err.message : "Benutzer konnte nicht ausgeloggt werden.");
         }
 
         setBusyId(null);
@@ -48,6 +65,7 @@ export default function UserTable({ users }: Props) {
                         <th className={headerCell}>Status</th>
                         <th className={headerCell}>Eingeladen von</th>
                         <th className={headerCell}>Letzter Login</th>
+                        <th className={headerCell}>Session</th>
                         <th className={headerCell}>Aktionen</th>
                     </tr>
                 </thead>
@@ -56,7 +74,7 @@ export default function UserTable({ users }: Props) {
 
                     {users.length === 0 && (
                         <tr>
-                            <td colSpan={6} className="p-6 text-center text-sm text-gray-500">
+                            <td colSpan={7} className="p-6 text-center text-sm text-gray-500">
                                 Noch keine Benutzer vorhanden.
                             </td>
                         </tr>
@@ -98,25 +116,54 @@ export default function UserTable({ users }: Props) {
                             </td>
 
                             <td className="p-3">
-                                <button
-                                    onClick={() => toggleLock(user)}
-                                    disabled={busyId !== null}
-                                    className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${user.isLocked
-                                        ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                                        : "bg-red-600 text-white hover:bg-red-700"}`}
-                                >
-                                    {user.isLocked ? (
-                                        <>
-                                            <LockOpen className="size-3.5" />
-                                            Entsperren
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Lock className="size-3.5" />
-                                            Sperren
-                                        </>
-                                    )}
-                                </button>
+                                {user.activeSessionCount > 0 ? (
+                                    <div>
+                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-800">
+                                            <span className="size-1.5 rounded-full bg-sky-500" />
+                                            Angemeldet
+                                            {user.activeSessionCount > 1 && ` (${user.activeSessionCount} Geräte)`}
+                                        </span>
+                                        {user.lastSessionStartedAt && (
+                                            <div className="mt-0.5 text-xs text-gray-500">
+                                                seit {formatDateTime(user.lastSessionStartedAt)}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <span className="text-gray-400">—</span>
+                                )}
+                            </td>
+
+                            <td className="p-3">
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => logout(user)}
+                                        disabled={busyId !== null || user.activeSessionCount === 0}
+                                        className="flex items-center gap-1 rounded-md bg-gray-200 px-2 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-40"
+                                    >
+                                        <LogOut className="size-3.5" />
+                                        Ausloggen
+                                    </button>
+                                    <button
+                                        onClick={() => toggleLock(user)}
+                                        disabled={busyId !== null}
+                                        className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${user.isLocked
+                                            ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                            : "bg-red-600 text-white hover:bg-red-700"}`}
+                                    >
+                                        {user.isLocked ? (
+                                            <>
+                                                <LockOpen className="size-3.5" />
+                                                Entsperren
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Lock className="size-3.5" />
+                                                Sperren
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             </td>
 
                         </tr>
