@@ -1,5 +1,6 @@
 import {TagRecord} from "@/types/tag";
 import {AttributeValues} from "@/types/attribute";
+import {TaggedPerson} from "@/types/person";
 
 export interface UploadRecord {
     id?: number;
@@ -14,4 +15,10 @@ export interface UploadRecord {
     createdAtFormatted?: string;
     tags?: TagRecord[];
     attributes?: AttributeValues;
+    // people tagged on the image in the frontend
+    people?: TaggedPerson[];
+    // likes from the frontend's users
+    likeCount?: number;
+    // logged-in frontend users who opened the image in the lightbox, each counted once
+    viewCount?: number;
 }
