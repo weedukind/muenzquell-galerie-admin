@@ -119,6 +119,7 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
     function exportCsv() {
 
         const headers = [
+            "ID",
             "Name",
             ...attributeTypes.map(type => type.name),
             "Größe",
@@ -133,6 +134,7 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
         ];
 
         const rows = filteredUploads.map(upload => [
+            String(upload.id),
             upload.name,
             ...attributeTypes.map(type => optionName(type, upload.attributes) ?? ""),
             formatSize(upload.size),
@@ -162,6 +164,12 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
 
     // Every column except the checkbox and the name can be hidden.
     const columns: Column[] = [
+        {
+            key: "id",
+            label: "ID",
+            align: "right",
+            render: upload => upload.id
+        },
         ...attributeTypes.map(type => ({
             key: `attribute-${type.id}`,
             label: type.name,
