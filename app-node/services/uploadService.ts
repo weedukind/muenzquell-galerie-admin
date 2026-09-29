@@ -35,7 +35,8 @@ export async function getUploads(): Promise<UploadRecord[]> {
             size,
             width,
             height,
-            created_at
+            created_at,
+            (SELECT COUNT(*) FROM image_views v WHERE v.upload_id = uploads.id) AS viewCount
          FROM uploads
          ORDER BY created_at DESC`
     );
