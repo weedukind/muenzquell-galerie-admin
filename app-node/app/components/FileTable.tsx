@@ -74,6 +74,7 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
         const headers = [
             "Name",
             ...attributeTypes.map(type => type.name),
+            "Aufrufe",
             "Größe",
             "Maße",
             "Typ",
@@ -85,6 +86,7 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
         const rows = filteredUploads.map(upload => [
             upload.name,
             ...attributeTypes.map(type => optionName(type, upload.attributes) ?? ""),
+            String(upload.viewCount ?? 0),
             formatSize(upload.size),
             upload.width && upload.height ? `${upload.width} × ${upload.height}` : "",
             upload.mimeType,
@@ -168,6 +170,10 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
                 ))}
 
                 <th className="p-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Aufrufe
+                </th>
+
+                <th className="p-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Größe
                 </th>
 
@@ -196,7 +202,7 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
 
                 <tr>
                     <td
-                        colSpan={7 + attributeTypes.length}
+                        colSpan={8 + attributeTypes.length}
                         className="p-6 text-center text-sm text-gray-500"
                     >
                         Keine Bilder mit den ausgewählten Attributen gefunden.
@@ -245,6 +251,10 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
                             {optionName(type, upload.attributes) ?? "—"}
                         </td>
                     ))}
+
+                    <td className="p-3 text-right text-gray-600">
+                        {upload.viewCount ?? 0}
+                    </td>
 
                     <td className="p-3 text-right text-gray-600">
                         {formatSize(upload.size)}
