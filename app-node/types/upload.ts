@@ -12,6 +12,8 @@ export interface UploadRecord {
     height?: number | null;
     created_at?: string;
     createdAtFormatted?: string;
+    // logged-in frontend users who opened the image in the lightbox, each counted once
+    viewCount?: number;
     tags?: TagRecord[];
     attributes?: AttributeValues;
 }
