@@ -1,8 +1,9 @@
 import db from "@/lib/db";
 import { UserRecord } from "@/types/user";
 
-interface UserRow extends Omit<UserRecord, "isLocked"> {
+interface UserRow extends Omit<UserRecord, "isLocked" | "invitedByDeleted"> {
     isLocked: number;
+    invitedByDeleted: number;
 }
 
 export async function getUsers(): Promise<UserRecord[]> {
@@ -16,7 +17,9 @@ export async function getUsers(): Promise<UserRecord[]> {
             u.last_login_at AS lastLoginAt,
             u.invited_by AS invitedById,
             inviter.display_name AS invitedByName,
+            inviter.deleted_at IS NOT NULL AS invitedByDeleted,
             u.created_at AS createdAt,
+            u.deleted_at AS deletedAt,
             COUNT(s.token_hash) AS activeSessionCount,
             MAX(s.created_at) AS lastSessionStartedAt
          FROM users u
@@ -26,12 +29,13 @@ export async function getUsers(): Promise<UserRecord[]> {
            ON s.user_id = u.id
           AND s.expires_at > STRFTIME('%Y-%m-%dT%H:%M:%SZ', 'now')
          GROUP BY u.id
-         ORDER BY u.display_name COLLATE NOCASE`
+         ORDER BY u.deleted_at IS NOT NULL, u.display_name COLLATE NOCASE`
     );
 
     return rows.map(row => ({
         ...row,
-        isLocked: row.isLocked === 1
+        isLocked: row.isLocked === 1,
+        invitedByDeleted: row.invitedByDeleted === 1
     }));
 }
 
