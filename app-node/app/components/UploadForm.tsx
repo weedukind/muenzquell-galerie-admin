@@ -3,17 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UploadCloud, FileIcon, CheckCircle2, XCircle } from "lucide-react";
-import { TagRecord } from "@/types/tag";
 import { AttributeType, AttributeValues } from "@/types/attribute";
 import { getMissingAttributeTypes } from "@/lib/attributes";
-import { assignTag, uploadFileWithProgress } from "@/lib/api";
+import { uploadFileWithProgress } from "@/lib/api";
 import { settleAll } from "@/lib/bulkAction";
-import TagPickerButton from "./TagPickerButton";
 import ProgressBar from "./ProgressBar";
 import AttributeSelects from "./AttributeSelects";
 
 interface Props {
-    allTags: TagRecord[];
     attributeTypes: AttributeType[];
 }
 
@@ -22,13 +19,12 @@ interface FileState {
     error: boolean;
 }
 
-export default function UploadForm({ allTags, attributeTypes }: Props) {
+export default function UploadForm({ attributeTypes }: Props) {
 
     const router = useRouter();
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [fileStates, setFileStates] = useState<FileState[]>([]);
     const [uploading, setUploading] = useState(false);
-    const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
     const [attributeValues, setAttributeValues] = useState<AttributeValues>({});
 
     const missingAttributes = getMissingAttributeTypes(attributeTypes, attributeValues);
@@ -61,29 +57,14 @@ export default function UploadForm({ allTags, attributeTypes }: Props) {
 
         setUploading(false);
 
-        const uploaded = [];
-
-        for (let index = 0; index < results.length; index++) {
-
-            const result = results[index];
-
-            if (result.status === "fulfilled") {
-                uploaded.push(result.value);
-            } else {
+        results.forEach((result, index) => {
+            if (result.status === "rejected") {
                 updateFileState(index, { error: true });
             }
-        }
+        });
 
         if (failureCount > 0) {
             alert(`${failureCount} Datei(en) konnten nicht hochgeladen werden.`);
-        }
-
-        if (selectedTagIds.length > 0 && uploaded.length > 0) {
-            await Promise.all(
-                uploaded.flatMap(file =>
-                    selectedTagIds.map(tagId => assignTag(file.id, tagId))
-                )
-            );
         }
 
         if (failureCount === 0) {
@@ -169,15 +150,6 @@ export default function UploadForm({ allTags, attributeTypes }: Props) {
                     )}
 
                     <div className="mt-4 flex items-center gap-2">
-
-                        <TagPickerButton
-                            label={selectedTagIds.length > 0
-                                ? `Tags (${selectedTagIds.length})`
-                                : "Tags auswählen"}
-                            currentTagIds={selectedTagIds}
-                            allTags={allTags}
-                            onSave={setSelectedTagIds}
-                        />
 
                         <button
                             onClick={upload}
