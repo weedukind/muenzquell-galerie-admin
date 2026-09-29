@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, LockOpen, LogOut } from "lucide-react";
+import { Lock, LockOpen, LogOut, UserX } from "lucide-react";
 import { UserRecord } from "@/types/user";
 import { setUserLocked, logoutUser } from "@/lib/api";
 import { formatDateTime } from "@/lib/formatDateTime";
@@ -84,16 +84,35 @@ export default function UserTable({ users }: Props) {
 
                         <tr key={user.id} className="transition-colors hover:bg-gray-50">
 
-                            <td className="p-3 text-gray-900">
-                                {user.email}
-                            </td>
+                            {/* A deleted account only has placeholders left. */}
+                            {user.deletedAt ? (
+                                <td colSpan={2} className="p-3 text-gray-400">
+                                    Gelöschtes Konto
+                                </td>
+                            ) : (
+                                <>
+                                    <td className="p-3 text-gray-900">
+                                        {user.email}
+                                    </td>
 
-                            <td className="p-3 font-medium text-gray-900">
-                                {user.displayName}
-                            </td>
+                                    <td className="p-3 font-medium text-gray-900">
+                                        {user.displayName}
+                                    </td>
+                                </>
+                            )}
 
                             <td className="p-3">
-                                {user.isLocked ? (
+                                {user.deletedAt ? (
+                                    <div>
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                                            <UserX className="size-3" />
+                                            Gelöscht
+                                        </span>
+                                        <div className="mt-0.5 text-xs text-gray-500">
+                                            am {formatDateTime(user.deletedAt)}
+                                        </div>
+                                    </div>
+                                ) : user.isLocked ? (
                                     <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
                                         <Lock className="size-3" />
                                         Gesperrt
@@ -106,13 +125,15 @@ export default function UserTable({ users }: Props) {
                             </td>
 
                             <td className="p-3 text-gray-600">
-                                {user.invitedByName ?? "—"}
+                                {user.invitedByDeleted
+                                    ? <span className="text-gray-400">Gelöschtes Konto</span>
+                                    : user.invitedByName ?? "—"}
                             </td>
 
                             <td className="p-3 text-gray-600">
                                 {user.lastLoginAt
                                     ? formatDateTime(user.lastLoginAt)
-                                    : <span className="text-gray-400">Noch nie (Einladung offen)</span>}
+                                    : <span className="text-gray-400">{user.deletedAt ? "Noch nie" : "Noch nie (Einladung offen)"}</span>}
                             </td>
 
                             <td className="p-3">
@@ -135,35 +156,40 @@ export default function UserTable({ users }: Props) {
                             </td>
 
                             <td className="p-3">
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => logout(user)}
-                                        disabled={busyId !== null || user.activeSessionCount === 0}
-                                        className="flex items-center gap-1 rounded-md bg-gray-200 px-2 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-40"
-                                    >
-                                        <LogOut className="size-3.5" />
-                                        Ausloggen
-                                    </button>
-                                    <button
-                                        onClick={() => toggleLock(user)}
-                                        disabled={busyId !== null}
-                                        className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${user.isLocked
-                                            ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                                            : "bg-red-600 text-white hover:bg-red-700"}`}
-                                    >
-                                        {user.isLocked ? (
-                                            <>
-                                                <LockOpen className="size-3.5" />
-                                                Entsperren
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Lock className="size-3.5" />
-                                                Sperren
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
+                                {/* Nothing left to lock or log out: the frontend ignores deleted users. */}
+                                {user.deletedAt ? (
+                                    <span className="text-gray-400">—</span>
+                                ) : (
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => logout(user)}
+                                            disabled={busyId !== null || user.activeSessionCount === 0}
+                                            className="flex items-center gap-1 rounded-md bg-gray-200 px-2 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-40"
+                                        >
+                                            <LogOut className="size-3.5" />
+                                            Ausloggen
+                                        </button>
+                                        <button
+                                            onClick={() => toggleLock(user)}
+                                            disabled={busyId !== null}
+                                            className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${user.isLocked
+                                                ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                                : "bg-red-600 text-white hover:bg-red-700"}`}
+                                        >
+                                            {user.isLocked ? (
+                                                <>
+                                                    <LockOpen className="size-3.5" />
+                                                    Entsperren
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Lock className="size-3.5" />
+                                                    Sperren
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                )}
                             </td>
 
                         </tr>
