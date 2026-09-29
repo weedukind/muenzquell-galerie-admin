@@ -58,6 +58,7 @@ erDiagram
         TEXT last_login_at
         INTEGER invited_by FK
         TEXT created_at
+        TEXT deleted_at
     }
     login_codes {
         INTEGER id PK
@@ -139,7 +140,7 @@ The value an image has for an attribute type.
 | `attribute_type_id` | `INTEGER` FK → `attribute_types.id` | `ON DELETE CASCADE` |
 | `option_id` | `INTEGER` | with `attribute_type_id`: FK → `attribute_options (id, attribute_type_id)` |
 
-### `users` (`0006`, `0007`)
+### `users` (`0006`, `0007`, `0012`)
 
 Users of the public frontend (`muenzquell-fe`). They are created and log in there, and are managed in this backend at `/users`, where they can be locked and unlocked.
 
@@ -152,6 +153,7 @@ Users of the public frontend (`muenzquell-fe`). They are created and log in ther
 | `last_login_at` | `TEXT` | ISO 8601 UTC, set by the frontend on login. `NULL` means the user has never logged in, i.e. the invitation hasn't been accepted yet |
 | `invited_by` | `INTEGER` FK → `users.id` | the user who sent the invitation; `NULL` for users nobody invited. `ON DELETE SET NULL`: deleting the inviter keeps the invited user |
 | `created_at` | `TEXT` | ISO 8601 UTC, set by the database |
+| `deleted_at` | `TEXT` | ISO 8601 UTC, set by the frontend when the user deletes their account; `NULL` for every other user. The row stays so `invited_by` keeps showing who invited whom, but `email` and `display_name` are overwritten with placeholders (`deleted-<id>@deleted.invalid`, `deleted@<id>`). `/users` shows such rows as "Gelöschtes Konto" |
 
 The database only stores the lock. Refusing login for locked users is the job of the frontend's login.
 
@@ -212,6 +214,7 @@ An attribute type without options blocks both uploading and saving, because no v
 | Tag | its `upload_tags` rows are deleted |
 | Attribute type | its options and all image values for it are deleted (the UI asks for confirmation) |
 | Attribute option | **refused (`409`) while any image still uses it**; reassign those images first |
+| User (deleted in the frontend) | not a real deletion: `deleted_at` is set and the row anonymised, the frontend deletes their likes, sessions and login codes |
 | User | users they invited keep existing, their `invited_by` becomes `NULL`; their `login_codes` and `sessions` are deleted |
 
 ## Code

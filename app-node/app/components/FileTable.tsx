@@ -11,7 +11,7 @@ import { toCsv, downloadCsv } from "@/lib/csv";
 import { Download, ExternalLink, AlertTriangle } from "lucide-react";
 import { useSelection } from "@/hooks/useSelection";
 import TagEditor from "./TagEditor";
-import TagFilterBar from "./TagFilterBar";
+import AttributeFilterBar from "./AttributeFilterBar";
 import BulkDeleteButton from "./BulkDeleteButton";
 import BulkTagButton from "./BulkTagButton";
 
@@ -27,15 +27,29 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
         return type.options.find(option => option.id === values?.[type.id])?.name;
     }
 
-    const [activeTagFilters, setActiveTagFilters] = useState<number[]>([]);
+    const [activeOptionIds, setActiveOptionIds] = useState<number[]>([]);
 
-    const filteredUploads = activeTagFilters.length === 0
-        ? uploads
-        : uploads.filter(upload =>
-            activeTagFilters.every(tagId =>
-                upload.tags?.some(tag => tag.id === tagId)
-            )
-        );
+    // Only offer options that at least one upload has, so no filter leads to an empty list.
+    const filterTypes = attributeTypes.map(type => ({
+        ...type,
+        options: type.options.filter(option =>
+            uploads.some(upload => upload.attributes?.[type.id] === option.id)
+        )
+    }));
+
+    // Options of the same type are OR-ed, different types are AND-ed.
+    const activeFilters = attributeTypes
+        .map(type => ({
+            typeId: type.id,
+            optionIds: type.options.map(option => option.id).filter(id => activeOptionIds.includes(id))
+        }))
+        .filter(filter => filter.optionIds.length > 0);
+
+    const filteredUploads = uploads.filter(upload =>
+        activeFilters.every(filter =>
+            filter.optionIds.includes(upload.attributes?.[filter.typeId] ?? -1)
+        )
+    );
 
     const {
         selectedIds,
@@ -47,11 +61,11 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
 
     const selectedUploads = uploads.filter(upload => selectedIds.includes(upload.id!));
 
-    function toggleTagFilter(tagId: number) {
-        setActiveTagFilters(current =>
-            current.includes(tagId)
-                ? current.filter(existing => existing !== tagId)
-                : [...current, tagId]
+    function toggleOptionFilter(optionId: number) {
+        setActiveOptionIds(current =>
+            current.includes(optionId)
+                ? current.filter(existing => existing !== optionId)
+                : [...current, optionId]
         );
     }
 
@@ -79,13 +93,13 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
             upload.publicUrl
         ]);
 
-        const activeTagNames = activeTagFilters
-            .map(tagId => allTags.find(tag => tag.id === tagId)?.name)
-            .filter((name): name is string => !!name)
-            .map(name => name.toLowerCase());
+        const activeOptionNames = attributeTypes
+            .flatMap(type => type.options)
+            .filter(option => activeOptionIds.includes(option.id))
+            .map(option => option.name.toLowerCase());
 
-        const filename = activeTagNames.length > 0
-            ? `${activeTagNames.join("-")}.csv`
+        const filename = activeOptionNames.length > 0
+            ? `${activeOptionNames.join("-")}.csv`
             : "uploads.csv";
 
         downloadCsv(filename, toCsv(headers, rows));
@@ -117,11 +131,11 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
 
             </div>
 
-            <TagFilterBar
-                allTags={allTags}
-                activeTagIds={activeTagFilters}
-                onToggle={toggleTagFilter}
-                onReset={() => setActiveTagFilters([])}
+            <AttributeFilterBar
+                types={filterTypes}
+                activeOptionIds={activeOptionIds}
+                onToggle={toggleOptionFilter}
+                onReset={() => setActiveOptionIds([])}
             />
 
             <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
@@ -178,14 +192,14 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
 
             <tbody className="divide-y divide-gray-200 bg-white">
 
-            {activeTagFilters.length > 0 && filteredUploads.length === 0 && (
+            {activeFilters.length > 0 && filteredUploads.length === 0 && (
 
                 <tr>
                     <td
                         colSpan={7 + attributeTypes.length}
                         className="p-6 text-center text-sm text-gray-500"
                     >
-                        Keine Bilder mit allen ausgewählten Tags gefunden.
+                        Keine Bilder mit den ausgewählten Attributen gefunden.
                     </td>
                 </tr>
 
