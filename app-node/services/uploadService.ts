@@ -2,6 +2,7 @@ import db from "@/lib/db";
 import { UploadRecord } from "@/types/upload";
 import { getTagsForUploads } from "./tagService";
 import { getAttributeValuesForUploads } from "./attributeService";
+import { getPeopleForUploads } from "./personTagService";
 
 export async function insertUpload(upload: UploadRecord): Promise<number> {
 
@@ -36,6 +37,7 @@ export async function getUploads(): Promise<UploadRecord[]> {
             width,
             height,
             created_at,
+            (SELECT COUNT(*) FROM image_likes l WHERE l.upload_id = uploads.id) AS likeCount,
             (SELECT COUNT(*) FROM image_views v WHERE v.upload_id = uploads.id) AS viewCount
          FROM uploads
          ORDER BY created_at DESC`
@@ -59,10 +61,12 @@ export async function getUploads(): Promise<UploadRecord[]> {
 
     const tags = await getTagsForUploads();
     const attributes = await getAttributeValuesForUploads();
+    const people = await getPeopleForUploads();
 
     for (const upload of uploads) {
         upload.tags = tags.get(upload.id!) ?? [];
         upload.attributes = attributes.get(upload.id!) ?? {};
+        upload.people = people.get(upload.id!) ?? [];
     }
 
     return uploads;
