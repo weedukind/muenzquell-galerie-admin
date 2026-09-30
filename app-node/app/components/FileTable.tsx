@@ -1,19 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { ReactNode } from "react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { UploadRecord } from "@/types/upload";
 import { TagRecord } from "@/types/tag";
 import { AttributeType, AttributeValues } from "@/types/attribute";
 import { getMissingAttributeTypes } from "@/lib/attributes";
 import { formatSize } from "@/lib/formatSize";
 import { toCsv, downloadCsv } from "@/lib/csv";
+import { DEFAULT_SORT, formatIdParam, OPTIONS_PARAM, parseIdParam, parseSortParam, PEOPLE_PARAM, SORT_PARAM, SortOrder } from "@/lib/filterParams";
 import { Download, ExternalLink, AlertTriangle } from "lucide-react";
 import { useSelection } from "@/hooks/useSelection";
+import { useHiddenColumns } from "@/hooks/useHiddenColumns";
 import TagEditor from "./TagEditor";
-import AttributeFilterBar from "./AttributeFilterBar";
+import UploadFilterBar from "./UploadFilterBar";
 import BulkDeleteButton from "./BulkDeleteButton";
 import BulkTagButton from "./BulkTagButton";
+import ColumnPicker from "./ColumnPicker";
+
+interface Column {
+    key: string;
+    label: string;
+    align?: "right";
+    render: (upload: UploadRecord) => ReactNode;
+}
 
 interface FileTableProps {
     uploads: UploadRecord[];
@@ -27,7 +38,17 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
         return type.options.find(option => option.id === values?.[type.id])?.name;
     }
 
-    const [activeOptionIds, setActiveOptionIds] = useState<number[]>([]);
+    // The filter lives in the URL, as in the frontend: linkable, and "back" undoes it.
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
+    const activeOptionIds = parseIdParam(searchParams.get(OPTIONS_PARAM));
+    const activePersonIds = parseIdParam(searchParams.get(PEOPLE_PARAM));
+    const sort = parseSortParam(searchParams.get(SORT_PARAM));
+
+    // Everyone tagged on at least one upload, by name.
+    const people = [...new Map(
+        uploads.flatMap(upload => upload.people ?? []).map(person => [person.id, person])
+    ).values()].sort((a, b) => a.name.localeCompare(b.name, "de", { sensitivity: "base" }));
 
     // Only offer options that at least one upload has, so no filter leads to an empty list.
     const filterTypes = attributeTypes.map(type => ({
@@ -45,11 +66,17 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
         }))
         .filter(filter => filter.optionIds.length > 0);
 
-    const filteredUploads = uploads.filter(upload =>
-        activeFilters.every(filter =>
-            filter.optionIds.includes(upload.attributes?.[filter.typeId] ?? -1)
+    const filtering = activeFilters.length > 0 || activePersonIds.length > 0;
+
+    const filteredUploads = uploads
+        .filter(upload =>
+            activeFilters.every(filter =>
+                filter.optionIds.includes(upload.attributes?.[filter.typeId] ?? -1)
+            )
+            && (activePersonIds.length === 0
+                || upload.people?.some(person => activePersonIds.includes(person.id)))
         )
-    );
+        .sort(compareUploads(sort));
 
     const {
         selectedIds,
@@ -61,44 +88,72 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
 
     const selectedUploads = uploads.filter(upload => selectedIds.includes(upload.id!));
 
-    function toggleOptionFilter(optionId: number) {
-        setActiveOptionIds(current =>
-            current.includes(optionId)
-                ? current.filter(existing => existing !== optionId)
-                : [...current, optionId]
-        );
+    function updateParams(update: (params: URLSearchParams) => void) {
+        const params = new URLSearchParams(searchParams.toString());
+        update(params);
+        const query = params.toString();
+        window.history.pushState(null, "", query ? `?${query}` : pathname);
+    }
+
+    function toggleIdParam(name: string, current: number[], id: number) {
+        const next = current.includes(id)
+            ? current.filter(existing => existing !== id)
+            : [...current, id];
+        updateParams(params => {
+            if (next.length > 0)
+                params.set(name, formatIdParam(next));
+            else
+                params.delete(name);
+        });
+    }
+
+    function setSort(value: SortOrder) {
+        updateParams(params => {
+            if (value === DEFAULT_SORT)
+                params.delete(SORT_PARAM);
+            else
+                params.set(SORT_PARAM, value);
+        });
     }
 
     function exportCsv() {
 
         const headers = [
+            "ID",
             "Name",
             ...attributeTypes.map(type => type.name),
-            "Aufrufe",
             "Größe",
             "Maße",
             "Typ",
             "Hochgeladen",
             "Tags",
+            "Personen",
+            "Likes",
+            "Aufrufe",
             "Link"
         ];
 
         const rows = filteredUploads.map(upload => [
+            String(upload.id),
             upload.name,
             ...attributeTypes.map(type => optionName(type, upload.attributes) ?? ""),
-            String(upload.viewCount ?? 0),
             formatSize(upload.size),
             upload.width && upload.height ? `${upload.width} × ${upload.height}` : "",
             upload.mimeType,
             upload.createdAtFormatted ?? "",
             (upload.tags ?? []).map(tag => tag.name).join("; "),
+            (upload.people ?? []).map(person => person.name).join("; "),
+            String(upload.likeCount ?? 0),
+            String(upload.viewCount ?? 0),
             upload.publicUrl
         ]);
 
-        const activeOptionNames = attributeTypes
-            .flatMap(type => type.options)
-            .filter(option => activeOptionIds.includes(option.id))
-            .map(option => option.name.toLowerCase());
+        const activeOptionNames = [
+            ...attributeTypes
+                .flatMap(type => type.options)
+                .filter(option => activeOptionIds.includes(option.id)),
+            ...people.filter(person => activePersonIds.includes(person.id))
+        ].map(option => option.name.toLowerCase());
 
         const filename = activeOptionNames.length > 0
             ? `${activeOptionNames.join("-")}.csv`
@@ -106,6 +161,82 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
 
         downloadCsv(filename, toCsv(headers, rows));
     }
+
+    // Every column except the checkbox and the name can be hidden.
+    const columns: Column[] = [
+        {
+            key: "id",
+            label: "ID",
+            align: "right",
+            render: upload => upload.id
+        },
+        ...attributeTypes.map(type => ({
+            key: `attribute-${type.id}`,
+            label: type.name,
+            render: (upload: UploadRecord) => optionName(type, upload.attributes) ?? "—"
+        })),
+        {
+            key: "people",
+            label: "Personen",
+            render: upload => upload.people && upload.people.length > 0
+                ? upload.people.map(person => person.name).join(", ")
+                : "—"
+        },
+        {
+            key: "likes",
+            label: "Likes",
+            align: "right",
+            render: upload => upload.likeCount ?? 0
+        },
+        {
+            key: "views",
+            label: "Aufrufe",
+            align: "right",
+            render: upload => upload.viewCount ?? 0
+        },
+        {
+            key: "size",
+            label: "Größe",
+            align: "right",
+            render: upload => formatSize(upload.size)
+        },
+        {
+            key: "dimensions",
+            label: "Maße",
+            align: "right",
+            render: upload => upload.width && upload.height
+                ? `${upload.width} × ${upload.height}`
+                : "—"
+        },
+        {
+            key: "mimeType",
+            label: "Typ",
+            render: upload => upload.mimeType
+        },
+        {
+            key: "createdAt",
+            label: "Hochgeladen",
+            render: upload => upload.createdAtFormatted
+        },
+        {
+            key: "file",
+            label: "Datei",
+            render: upload => (
+                <a
+                    href={upload.publicUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                >
+                    Öffnen
+                    <ExternalLink className="size-3.5" />
+                </a>
+            )
+        }
+    ];
+
+    const { hiddenKeys, setHiddenKeys } = useHiddenColumns();
+    const visibleColumns = columns.filter(column => !hiddenKeys.includes(column.key));
 
     return (
         <div>
@@ -131,16 +262,32 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
                     Als CSV exportieren
                 </button>
 
+                <div className="ml-auto">
+                    <ColumnPicker
+                        columns={columns}
+                        hiddenKeys={hiddenKeys}
+                        onChange={setHiddenKeys}
+                    />
+                </div>
+
             </div>
 
-            <AttributeFilterBar
+            <UploadFilterBar
                 types={filterTypes}
-                activeOptionIds={activeOptionIds}
-                onToggle={toggleOptionFilter}
-                onReset={() => setActiveOptionIds([])}
+                people={people}
+                selectedOptionIds={activeOptionIds}
+                selectedPersonIds={activePersonIds}
+                sort={sort}
+                onToggleOption={optionId => toggleIdParam(OPTIONS_PARAM, activeOptionIds, optionId)}
+                onTogglePerson={personId => toggleIdParam(PEOPLE_PARAM, activePersonIds, personId)}
+                onSortChange={setSort}
+                onReset={() => updateParams(params => {
+                    params.delete(OPTIONS_PARAM);
+                    params.delete(PEOPLE_PARAM);
+                })}
             />
 
-            <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
+            <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
             <table className="min-w-full divide-y divide-gray-200">
 
             <thead className="bg-gray-50">
@@ -160,52 +307,28 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
                     Name
                 </th>
 
-                {attributeTypes.map(type => (
+                {visibleColumns.map(column => (
                     <th
-                        key={type.id}
-                        className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"
+                        key={column.key}
+                        className={`p-3 text-xs font-semibold uppercase tracking-wide text-gray-500 ${column.align === "right" ? "text-right" : "text-left"}`}
                     >
-                        {type.name}
+                        {column.label}
                     </th>
                 ))}
-
-                <th className="p-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    Aufrufe
-                </th>
-
-                <th className="p-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    Größe
-                </th>
-
-                <th className="p-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    Maße
-                </th>
-
-                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    Typ
-                </th>
-
-                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    Hochgeladen
-                </th>
-
-                <th className="p-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    Datei
-                </th>
             </tr>
 
             </thead>
 
             <tbody className="divide-y divide-gray-200 bg-white">
 
-            {activeFilters.length > 0 && filteredUploads.length === 0 && (
+            {filtering && filteredUploads.length === 0 && (
 
                 <tr>
                     <td
-                        colSpan={8 + attributeTypes.length}
+                        colSpan={2 + visibleColumns.length}
                         className="p-6 text-center text-sm text-gray-500"
                     >
-                        Keine Bilder mit den ausgewählten Attributen gefunden.
+                        Keine Bilder zu den ausgewählten Filtern gefunden.
                     </td>
                 </tr>
 
@@ -246,45 +369,14 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
                         />
                     </td>
 
-                    {attributeTypes.map(type => (
-                        <td key={type.id} className="p-3 text-gray-600">
-                            {optionName(type, upload.attributes) ?? "—"}
+                    {visibleColumns.map(column => (
+                        <td
+                            key={column.key}
+                            className={`p-3 text-gray-600 ${column.align === "right" ? "text-right" : ""}`}
+                        >
+                            {column.render(upload)}
                         </td>
                     ))}
-
-                    <td className="p-3 text-right text-gray-600">
-                        {upload.viewCount ?? 0}
-                    </td>
-
-                    <td className="p-3 text-right text-gray-600">
-                        {formatSize(upload.size)}
-                    </td>
-
-                    <td className="p-3 text-right text-gray-600">
-                        {upload.width && upload.height
-                            ? `${upload.width} × ${upload.height}`
-                            : "—"}
-                    </td>
-
-                    <td className="p-3 text-gray-600">
-                        {upload.mimeType}
-                    </td>
-
-                    <td className="p-3 text-gray-600">
-                        {upload.createdAtFormatted}
-                    </td>
-
-                    <td className="p-3">
-                        <a
-                            href={upload.publicUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-blue-600 hover:underline"
-                        >
-                            Öffnen
-                            <ExternalLink className="size-3.5" />
-                        </a>
-                    </td>
 
                 </tr>
 
@@ -297,4 +389,21 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
 
         </div>
     );
+}
+
+// As in the frontend: newest or oldest first, or by likes or views with ties broken by newest first.
+function compareUploads(sort: SortOrder): (a: UploadRecord, b: UploadRecord) => number {
+
+    const byId = (a: UploadRecord, b: UploadRecord) => b.id! - a.id!;
+
+    if (sort === "alt")
+        return (a, b) => a.id! - b.id!;
+
+    if (sort === "likes")
+        return (a, b) => (b.likeCount ?? 0) - (a.likeCount ?? 0) || byId(a, b);
+
+    if (sort === "aufrufe")
+        return (a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0) || byId(a, b);
+
+    return byId;
 }
