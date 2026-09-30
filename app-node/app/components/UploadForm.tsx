@@ -17,6 +17,8 @@ interface Props {
 interface FileState {
     progress: number;
     error: boolean;
+    // why the upload failed, e.g. that the image was uploaded before
+    message?: string;
 }
 
 export default function UploadForm({ attributeTypes }: Props) {
@@ -59,7 +61,10 @@ export default function UploadForm({ attributeTypes }: Props) {
 
         results.forEach((result, index) => {
             if (result.status === "rejected") {
-                updateFileState(index, { error: true });
+                updateFileState(index, {
+                    error: true,
+                    message: result.reason instanceof Error ? result.reason.message : undefined
+                });
             }
         });
 
@@ -130,6 +135,11 @@ export default function UploadForm({ attributeTypes }: Props) {
                                     percent={fileStates[index]?.progress ?? 0}
                                     error={fileStates[index]?.error}
                                 />
+                                {fileStates[index]?.message && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {fileStates[index].message}
+                                    </p>
+                                )}
                             </li>
                         ))}
 
