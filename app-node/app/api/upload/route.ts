@@ -3,11 +3,23 @@ import {
     uploadFile,
     deleteFile
 } from "@/services/storageService";
-import { randomUUID } from "crypto";
-import {insertUpload, deleteUpload} from "@/services/uploadService";
+import { createHash, randomUUID } from "crypto";
+import {insertUpload, deleteUpload, findUploadByHash} from "@/services/uploadService";
 import { getAttributeTypes, setUploadAttributes } from "@/services/attributeService";
 import { parseAttributeValues, validateAttributeValues } from "@/lib/attributes";
 import { imageSize } from "image-size";
+
+function duplicateResponse(existing: { id: number; name: string } | null) {
+    return NextResponse.json(
+        {
+            error: existing
+                ? `Dieses Bild wurde schon hochgeladen: "${existing.name}" (ID ${existing.id}).`
+                : "Dieses Bild wurde schon hochgeladen.",
+            existingId: existing?.id ?? null
+        },
+        { status: 409 }
+    );
+}
 
 export async function POST(req: Request) {
     const formData = await req.formData();
@@ -49,6 +61,14 @@ export async function POST(req: Request) {
 
         const buffer = Buffer.from(await file.arrayBuffer());
 
+        // The same content must not be uploaded twice, whatever the file is called.
+        const contentHash = createHash("sha256").update(buffer).digest("hex");
+        const existing = await findUploadByHash(contentHash);
+
+        if (existing) {
+            return duplicateResponse(existing);
+        }
+
         let width: number | null = null;
         let height: number | null = null;
 
@@ -75,7 +95,8 @@ export async function POST(req: Request) {
                 mimeType: file.type,
                 size: file.size,
                 width,
-                height
+                height,
+                contentHash
             });
 
             await setUploadAttributes(id, attributes);
@@ -87,6 +108,11 @@ export async function POST(req: Request) {
             }
 
             await deleteFile(objectKey);
+
+            // Uploaded at the same time as an identical file, which got in first.
+            if (id === null && err instanceof Error && err.message.includes("UNIQUE constraint failed: uploads.content_hash")) {
+                return duplicateResponse(await findUploadByHash(contentHash));
+            }
 
             throw err;
         }

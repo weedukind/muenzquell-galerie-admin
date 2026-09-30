@@ -9,6 +9,8 @@ export interface UploadRecord {
     publicUrl: string;
     mimeType: string;
     size: number;
+    // SHA-256 of the content (hex); null for uploads not backfilled yet
+    contentHash?: string | null;
     width?: number | null;
     height?: number | null;
     created_at?: string;
