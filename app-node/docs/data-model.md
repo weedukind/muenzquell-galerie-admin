@@ -24,6 +24,7 @@ erDiagram
         INTEGER width
         INTEGER height
         TEXT created_at
+        TEXT content_hash UK
     }
     tags {
         INTEGER id PK
@@ -88,7 +89,7 @@ Both classify images, but they follow different rules:
 
 ## Tables
 
-### `uploads` (`0001`, `0004`)
+### `uploads` (`0001`, `0004`, `0017`)
 
 One row per uploaded file.
 
@@ -102,6 +103,7 @@ One row per uploaded file.
 | `size` | `INTEGER` | bytes |
 | `width`, `height` | `INTEGER` | nullable; `NULL` for non-images or unsupported formats |
 | `created_at` | `TEXT` | ISO 8601 UTC, set by the database |
+| `content_hash` | `TEXT` | SHA-256 of the file content (hex), unique (index `idx_uploads_content_hash`). `POST /api/upload` refuses a file whose hash already exists (`409`). `NULL` for uploads from before `0017` until `npm run backfill-hashes` has run, and for later copies of files that were uploaded twice before that |
 
 ### `tags` (`0002`) and `upload_tags` (`0003`)
 

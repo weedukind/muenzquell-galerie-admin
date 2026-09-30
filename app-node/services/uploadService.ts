@@ -8,8 +8,8 @@ export async function insertUpload(upload: UploadRecord): Promise<number> {
 
     const result = await db.execute(
         `INSERT INTO uploads
-            (name, object_key, public_url, mime_type, size, width, height)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            (name, object_key, public_url, mime_type, size, width, height, content_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
             upload.name,
             upload.objectKey,
@@ -17,7 +17,8 @@ export async function insertUpload(upload: UploadRecord): Promise<number> {
             upload.mimeType,
             upload.size,
             upload.width ?? null,
-            upload.height ?? null
+            upload.height ?? null,
+            upload.contentHash ?? null
         ]
     );
 
@@ -93,6 +94,19 @@ export async function getUpload(id: number): Promise<UploadRecord | null> {
     const uploads = rows as UploadRecord[];
 
     return uploads.length > 0 ? uploads[0] : null;
+}
+
+// The upload with this content, if the file was uploaded before.
+export async function findUploadByHash(contentHash: string): Promise<{ id: number; name: string } | null> {
+
+    const rows = await db.query<{ id: number; name: string }>(
+        `SELECT id, name
+         FROM uploads
+         WHERE content_hash = ?`,
+        [contentHash]
+    );
+
+    return rows[0] ?? null;
 }
 
 export async function deleteUpload(id: number): Promise<void> {

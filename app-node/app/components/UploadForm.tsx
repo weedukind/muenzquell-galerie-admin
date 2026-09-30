@@ -7,6 +7,7 @@ import { AttributeType, AttributeValues } from "@/types/attribute";
 import { getMissingAttributeTypes } from "@/lib/attributes";
 import { uploadFileWithProgress } from "@/lib/api";
 import { settleAll } from "@/lib/bulkAction";
+import { formatSize } from "@/lib/formatSize";
 import ProgressBar from "./ProgressBar";
 import AttributeSelects from "./AttributeSelects";
 
@@ -17,6 +18,8 @@ interface Props {
 interface FileState {
     progress: number;
     error: boolean;
+    // why the upload failed, e.g. that the image was uploaded before
+    message?: string;
 }
 
 export default function UploadForm({ attributeTypes }: Props) {
@@ -59,7 +62,10 @@ export default function UploadForm({ attributeTypes }: Props) {
 
         results.forEach((result, index) => {
             if (result.status === "rejected") {
-                updateFileState(index, { error: true });
+                updateFileState(index, {
+                    error: true,
+                    message: result.reason instanceof Error ? result.reason.message : undefined
+                });
             }
         });
 
@@ -107,6 +113,7 @@ export default function UploadForm({ attributeTypes }: Props) {
                                     <span className="flex min-w-0 items-center gap-1.5 truncate text-gray-700">
                                         <FileIcon className="size-3.5 shrink-0 text-gray-400" />
                                         <span className="truncate">{file.name}</span>
+                                        <span className="shrink-0 text-xs text-gray-400">{formatSize(file.size)}</span>
                                     </span>
                                     <span className="flex shrink-0 items-center gap-1 text-xs">
                                         {fileStates[index]?.error ? (
@@ -130,6 +137,11 @@ export default function UploadForm({ attributeTypes }: Props) {
                                     percent={fileStates[index]?.progress ?? 0}
                                     error={fileStates[index]?.error}
                                 />
+                                {fileStates[index]?.message && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {fileStates[index].message}
+                                    </p>
+                                )}
                             </li>
                         ))}
 
