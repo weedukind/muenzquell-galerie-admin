@@ -1,6 +1,5 @@
 import db from "@/lib/db";
 import { UploadRecord } from "@/types/upload";
-import { getTagsForUploads } from "./tagService";
 import { getAttributeValuesForUploads } from "./attributeService";
 import { getPeopleForUploads } from "./personTagService";
 
@@ -60,12 +59,10 @@ export async function getUploads(): Promise<UploadRecord[]> {
 
     }
 
-    const tags = await getTagsForUploads();
     const attributes = await getAttributeValuesForUploads();
     const people = await getPeopleForUploads();
 
     for (const upload of uploads) {
-        upload.tags = tags.get(upload.id!) ?? [];
         upload.attributes = attributes.get(upload.id!) ?? {};
         upload.people = people.get(upload.id!) ?? [];
     }
