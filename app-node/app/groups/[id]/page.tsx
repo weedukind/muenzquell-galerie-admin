@@ -39,8 +39,11 @@ export default async function GroupDetailPage({
                 Alle Gruppen
             </Link>
 
-            <h1 className="mb-6 text-2xl font-semibold tracking-tight text-gray-900">
+            <h1 className="mb-6 flex flex-wrap items-baseline gap-x-3 text-2xl font-semibold tracking-tight text-gray-900">
                 Gruppe „{group.name}“
+                <span className="text-sm font-normal tabular-nums text-gray-500">
+                    ID {group.id}
+                </span>
             </h1>
 
             <GroupMembers groupId={group.id} members={members} candidates={candidates} />

@@ -5,11 +5,6 @@ import {
     deleteUpload
 } from "@/services/uploadService";
 
-import {
-    getTagIdsForUpload,
-    deleteTagIfOrphaned
-} from "@/services/tagService";
-
 import { deleteFile } from "@/services/storageService";
 
 export async function DELETE(
@@ -28,15 +23,9 @@ export async function DELETE(
         );
     }
 
-    const tagIds = await getTagIdsForUpload(upload.id!);
-
     await deleteFile(upload.objectKey);
 
     await deleteUpload(upload.id!);
-
-    for (const tagId of tagIds) {
-        await deleteTagIfOrphaned(tagId);
-    }
 
     return NextResponse.json({
         success: true

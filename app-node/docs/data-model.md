@@ -4,8 +4,6 @@ All metadata lives in a single Cloudflare D1 (SQLite) database. The files themse
 
 ```mermaid
 erDiagram
-    uploads ||--o{ upload_tags : "tagged with"
-    tags ||--o{ upload_tags : "assigned to"
     uploads ||--o{ upload_attributes : "has value"
     attribute_types ||--o{ attribute_options : "offers"
     attribute_types ||--o{ upload_attributes : "value for"
@@ -27,15 +25,6 @@ erDiagram
         INTEGER height
         TEXT created_at
         TEXT content_hash UK
-    }
-    tags {
-        INTEGER id PK
-        VARCHAR name UK
-        VARCHAR color
-    }
-    upload_tags {
-        INTEGER upload_id PK, FK
-        INTEGER tag_id PK, FK
     }
     attribute_types {
         INTEGER id PK
@@ -89,15 +78,9 @@ erDiagram
     }
 ```
 
-## Tags vs. attributes
+## Former tags
 
-Both classify images, but they follow different rules:
-
-| | Tags | Attributes |
-|---|---|---|
-| Per image | any number, including none | **exactly one** option per attribute type |
-| Values | free-form, created on the fly | fixed list of options, maintained at `/attributes` |
-| Example | `Chroniken25`, `Stefan` | Event = Chroniken, Jahr = 25, Creator = Stefan |
+Images used to have free-form tags (`tags`, `upload_tags`, migrations `0002`/`0003`). They were replaced by attributes, which allow **exactly one** option per attribute type (e.g. Event = Chroniken, Jahr = 25, Creator = Stefan), and dropped in `0019`. The frontend's person tags (`image_person_tags`) are a different thing and stay.
 
 ## Tables
 
@@ -116,10 +99,6 @@ One row per uploaded file.
 | `width`, `height` | `INTEGER` | nullable; `NULL` for non-images or unsupported formats |
 | `created_at` | `TEXT` | ISO 8601 UTC, set by the database |
 | `content_hash` | `TEXT` | SHA-256 of the file content (hex), unique (index `idx_uploads_content_hash`). `POST /api/upload` refuses a file whose hash already exists (`409`). `NULL` for uploads from before `0017` until `npm run backfill-hashes` has run, and for later copies of files that were uploaded twice before that |
-
-### `tags` (`0002`) and `upload_tags` (`0003`)
-
-`tags` holds `id`, a unique `name` and a `color` (hex; derived from the name if none is given). `upload_tags` is the many-to-many link with primary key `(upload_id, tag_id)`. Both foreign keys use `ON DELETE CASCADE`.
 
 ### `attribute_types` (`0005`)
 
@@ -239,8 +218,7 @@ An attribute type without options blocks both uploading and saving, because no v
 
 | Deleted | Effect |
 |---|---|
-| Upload | its `upload_tags` and `upload_attributes` rows go with it (cascade); the R2 object is deleted by the API route |
-| Tag | its `upload_tags` rows are deleted |
+| Upload | its `upload_attributes` rows go with it (cascade); the R2 object is deleted by the API route |
 | Attribute type | its options and all image values for it are deleted (the UI asks for confirmation) |
 | Attribute option | **refused (`409`) while any image still uses it**; reassign those images first |
 | User (deleted in the frontend) | not a real deletion: `deleted_at` is set and the row anonymised, the frontend deletes their likes, sessions and login codes |
@@ -253,6 +231,5 @@ An attribute type without options blocks both uploading and saving, because no v
 |---|---|
 | D1 HTTP client | `lib/db.ts` |
 | Uploads | `services/uploadService.ts`, `types/upload.ts` |
-| Tags | `services/tagService.ts`, `types/tag.ts` |
 | Attributes | `services/attributeService.ts`, `types/attribute.ts`, `lib/attributes.ts` (validation) |
 | Users | `services/userService.ts`, `types/user.ts` |

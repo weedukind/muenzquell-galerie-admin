@@ -4,7 +4,6 @@ import { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { UploadRecord } from "@/types/upload";
-import { TagRecord } from "@/types/tag";
 import { AttributeType, AttributeValues } from "@/types/attribute";
 import { getMissingAttributeTypes } from "@/lib/attributes";
 import { formatSize } from "@/lib/formatSize";
@@ -13,10 +12,8 @@ import { DEFAULT_SORT, formatIdParam, OPTIONS_PARAM, parseIdParam, parseSortPara
 import { Download, ExternalLink, AlertTriangle } from "lucide-react";
 import { useSelection } from "@/hooks/useSelection";
 import { useHiddenColumns } from "@/hooks/useHiddenColumns";
-import TagEditor from "./TagEditor";
 import UploadFilterBar from "./UploadFilterBar";
 import BulkDeleteButton from "./BulkDeleteButton";
-import BulkTagButton from "./BulkTagButton";
 import ColumnPicker from "./ColumnPicker";
 
 interface Column {
@@ -28,11 +25,10 @@ interface Column {
 
 interface FileTableProps {
     uploads: UploadRecord[];
-    allTags: TagRecord[];
     attributeTypes: AttributeType[];
 }
 
-export default function FileTable({uploads, allTags, attributeTypes}: FileTableProps) {
+export default function FileTable({uploads, attributeTypes}: FileTableProps) {
 
     function optionName(type: AttributeType, values: AttributeValues | undefined): string | undefined {
         return type.options.find(option => option.id === values?.[type.id])?.name;
@@ -86,8 +82,6 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
         toggleOne
     } = useSelection(filteredUploads.map(upload => upload.id!));
 
-    const selectedUploads = uploads.filter(upload => selectedIds.includes(upload.id!));
-
     function updateParams(update: (params: URLSearchParams) => void) {
         const params = new URLSearchParams(searchParams.toString());
         update(params);
@@ -126,7 +120,6 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
             "Maße",
             "Typ",
             "Hochgeladen",
-            "Tags",
             "Personen",
             "Likes",
             "Aufrufe",
@@ -141,7 +134,6 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
             upload.width && upload.height ? `${upload.width} × ${upload.height}` : "",
             upload.mimeType,
             upload.createdAtFormatted ?? "",
-            (upload.tags ?? []).map(tag => tag.name).join("; "),
             (upload.people ?? []).map(person => person.name).join("; "),
             String(upload.likeCount ?? 0),
             String(upload.viewCount ?? 0),
@@ -246,11 +238,6 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
                 <BulkDeleteButton
                     selectedIds={selectedIds}
                     onDeleted={() => setSelectedIds([])}
-                />
-
-                <BulkTagButton
-                    selectedUploads={selectedUploads}
-                    allTags={allTags}
                 />
 
                 <button
@@ -364,9 +351,6 @@ export default function FileTable({uploads, allTags, attributeTypes}: FileTableP
                                 Attribute fehlen
                             </span>
                         )}
-                        <TagEditor
-                            tags={upload.tags ?? []}
-                        />
                     </td>
 
                     {visibleColumns.map(column => (
