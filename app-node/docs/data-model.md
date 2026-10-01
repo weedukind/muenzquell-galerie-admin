@@ -13,6 +13,8 @@ erDiagram
     users |o--o{ users : "invited"
     users ||--o{ login_codes : "requested"
     users ||--o{ sessions : "logged in with"
+    users ||--o{ user_group_members : "member of"
+    user_groups ||--o{ user_group_members : "has member"
 
     uploads {
         INTEGER id PK
@@ -74,6 +76,16 @@ erDiagram
         INTEGER user_id FK
         TEXT expires_at
         TEXT created_at
+    }
+    user_groups {
+        INTEGER id PK
+        VARCHAR name UK
+        TEXT created_at
+    }
+    user_group_members {
+        INTEGER group_id PK, FK
+        INTEGER user_id PK, FK
+        TEXT added_at
     }
 ```
 
@@ -193,6 +205,21 @@ The backend uses this table read-and-delete only:
 - **Ausloggen** (`DELETE /api/users/[id]/sessions`) deletes all sessions of the user.
 - **Sperren** also deletes the user's sessions, so unlocking later doesn't revive them.
 
+### `user_groups` and `user_group_members` (`0018`)
+
+Groups of frontend users, many-to-many: a user can be in any number of groups. Managed only in this backend, at `/groups` (create, rename, delete) and `/groups/[id]` (members). `/users` shows each user's groups.
+
+| Column | Type | Notes |
+|---|---|---|
+| `user_groups.id` | `INTEGER` PK | autoincrement |
+| `user_groups.name` | `VARCHAR(100)` | unique, case-insensitive (`COLLATE NOCASE`) |
+| `user_groups.created_at` | `TEXT` | ISO 8601 UTC, set by the database |
+| `user_group_members.group_id` | `INTEGER` FK → `user_groups.id` | with `user_id`: PK, so a user is in a group at most once |
+| `user_group_members.user_id` | `INTEGER` FK → `users.id` | index `idx_group_members_user` |
+| `user_group_members.added_at` | `TEXT` | ISO 8601 UTC, set by the database |
+
+Accounts deleted in the frontend can't be added, but keep memberships they already had (their row stays) and can be removed like anyone else.
+
 ## Rules for attribute values
 
 **At most one value per type** is enforced by the database: the primary key is `(upload_id, attribute_type_id)`. Saving a new value replaces the old one (`INSERT … ON CONFLICT … DO UPDATE`).
@@ -217,6 +244,7 @@ An attribute type without options blocks both uploading and saving, because no v
 | Attribute type | its options and all image values for it are deleted (the UI asks for confirmation) |
 | Attribute option | **refused (`409`) while any image still uses it**; reassign those images first |
 | User (deleted in the frontend) | not a real deletion: `deleted_at` is set and the row anonymised, the frontend deletes their likes, sessions and login codes |
+| Group | its `user_group_members` rows are deleted; the users stay |
 | User | users they invited keep existing, their `invited_by` becomes `NULL`; their `login_codes` and `sessions` are deleted |
 
 ## Code

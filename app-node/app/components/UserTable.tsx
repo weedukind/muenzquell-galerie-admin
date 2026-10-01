@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, LockOpen, LogOut, UserX } from "lucide-react";
 import { UserRecord } from "@/types/user";
@@ -63,6 +64,7 @@ export default function UserTable({ users }: Props) {
                         <th className={headerCell}>E-Mail</th>
                         <th className={headerCell}>Anzeigename</th>
                         <th className={headerCell}>Status</th>
+                        <th className={headerCell}>Gruppen</th>
                         <th className={headerCell}>Eingeladen von</th>
                         <th className={headerCell}>Letzter Login</th>
                         <th className={headerCell}>Session</th>
@@ -74,7 +76,7 @@ export default function UserTable({ users }: Props) {
 
                     {users.length === 0 && (
                         <tr>
-                            <td colSpan={7} className="p-6 text-center text-sm text-gray-500">
+                            <td colSpan={8} className="p-6 text-center text-sm text-gray-500">
                                 Noch keine Benutzer vorhanden.
                             </td>
                         </tr>
@@ -121,6 +123,24 @@ export default function UserTable({ users }: Props) {
                                     <span className="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
                                         Aktiv
                                     </span>
+                                )}
+                            </td>
+
+                            <td className="p-3">
+                                {user.groups.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1">
+                                        {user.groups.map(group => (
+                                            <Link
+                                                key={group.id}
+                                                href={`/groups/${group.id}`}
+                                                className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800 hover:bg-indigo-200"
+                                            >
+                                                {group.name}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <span className="text-gray-400">—</span>
                                 )}
                             </td>
 

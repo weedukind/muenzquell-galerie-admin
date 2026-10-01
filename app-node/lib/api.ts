@@ -187,6 +187,50 @@ export async function logoutUser(id: number): Promise<void> {
     );
 }
 
+export async function createGroup(name: string): Promise<number> {
+    const res = await jsonRequest(
+        "/api/groups",
+        "POST",
+        { name },
+        "Gruppe konnte nicht angelegt werden."
+    );
+    return (await res.json()).id;
+}
+
+export async function renameGroup(id: number, name: string): Promise<void> {
+    await jsonRequest(
+        `/api/groups/${id}`,
+        "PATCH",
+        { name },
+        "Gruppe konnte nicht umbenannt werden."
+    );
+}
+
+export async function deleteGroup(id: number): Promise<void> {
+    await request(
+        `/api/groups/${id}`,
+        { method: "DELETE" },
+        "Gruppe konnte nicht gelöscht werden."
+    );
+}
+
+export async function addGroupMember(groupId: number, userId: number): Promise<void> {
+    await jsonRequest(
+        `/api/groups/${groupId}/members`,
+        "POST",
+        { userId },
+        "Benutzer konnte nicht hinzugefügt werden."
+    );
+}
+
+export async function removeGroupMember(groupId: number, userId: number): Promise<void> {
+    await request(
+        `/api/groups/${groupId}/members/${userId}`,
+        { method: "DELETE" },
+        "Benutzer konnte nicht entfernt werden."
+    );
+}
+
 export function uploadFileWithProgress(
     file: File,
     attributes: AttributeValues,
