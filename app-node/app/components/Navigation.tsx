@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Cloud, LayoutGrid, Upload, Tags, ListChecks, Users } from "lucide-react";
+import { Cloud, LayoutGrid, Upload, Tags, ListChecks, Users, UsersRound } from "lucide-react";
 
 export default function Navigation() {
 
@@ -53,6 +53,14 @@ export default function Navigation() {
                     >
                         <Users className="size-4" />
                         Benutzer
+                    </Link>
+
+                    <Link
+                        href="/groups"
+                        className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                        <UsersRound className="size-4" />
+                        Gruppen
                     </Link>
 
                 </div>
