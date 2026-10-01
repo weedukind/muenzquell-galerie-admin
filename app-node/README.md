@@ -1,16 +1,17 @@
 # Cloud Upload Manager
 
-A Next.js app for uploading images to Cloudflare R2, storing their metadata in Cloudflare D1, and tagging them.
+A Next.js app for uploading images to Cloudflare R2, storing their metadata in Cloudflare D1, and describing them with attributes. It is the admin backend of the Münzquell gallery.
 
 ## Features
 
 - Multi-file upload to Cloudflare R2; image dimensions are detected automatically on upload
-- Overview table with bulk selection: bulk delete, bulk tag editing, an AND-based tag filter (clickable chips), and CSV export of the currently filtered uploads
-- Tag images individually or in bulk, create new tags on the fly — including right at upload time, before the files exist
-- Dedicated tag management page: create, rename, recolor, and delete tags, with a usage count per tag
+- Duplicate detection: a file whose content was uploaded before is rejected, whatever its name
+- Overview table filtered and sorted like the frontend's gallery (attributes, tagged people, newest/oldest/likes/views), with the state in the URL; selectable columns; bulk delete and CSV export of the currently filtered uploads
 - Attributes (e.g. Event, Jahr, Creator): each image must have exactly one option per attribute type — required at upload time and on the image edit page (`/uploads/[id]`); types and options are managed at `/attributes`
-- User management for the public frontend's users (`/users`): overview with e-mail, display name, status, inviter and last login; lock and unlock users
-- Deleting an image removes both the R2 object and the DB row; tag associations are cleaned up automatically via `ON DELETE CASCADE`
+- User management for the public frontend's users (`/users`): overview with e-mail, display name, status, inviter, last login and groups; lock and unlock users
+- User groups (`/groups`): create groups and manage their members
+- Resources (`/ressourcen`): daily e-mail statistics of the last 30 days
+- Deleting an image removes both the R2 object and the DB row; its attribute values, likes, views and person tags go automatically via `ON DELETE CASCADE`
 
 ## Getting started
 
@@ -40,7 +41,7 @@ npm run migrate
 
 The runner tracks applied migrations in a `schema_migrations` table and only runs the ones that aren't recorded yet, so it's safe to re-run.
 
-Tables, constraints and the rules for tags and attributes are described in [docs/data-model.md](docs/data-model.md).
+Tables, constraints and the rules for attributes are described in [docs/data-model.md](docs/data-model.md).
 
 ## Commands
 
@@ -52,9 +53,9 @@ Tables, constraints and the rules for tags and attributes are described in [docs
 ## Project structure
 
 - `app/` — routes, pages, and client components (App Router)
-- `services/` — database access (`uploadService`, `tagService`, `attributeService`, `userService`) and R2 storage (`storageService`)
-- `lib/` — `db.ts` (Cloudflare D1 HTTP API client), `r2.ts` (S3 client for R2), `attributes.ts` (attribute validation), `csv.ts` (CSV export helper), `formatSize.ts`
-- `hooks/` — shared client hooks (`useSelection`)
+- `services/` — database access (`uploadService`, `attributeService`, `personTagService`, `userService`, `groupService`, `mailStatsService`) and R2 storage (`storageService`)
+- `lib/` — `db.ts` (Cloudflare D1 HTTP API client), `r2.ts` (S3 client for R2), `attributes.ts` (attribute validation), `csv.ts` (CSV export helper), `filterParams.ts` (the gallery's URL parameters), `formatSize.ts`
+- `hooks/` — shared client hooks (`useSelection`, `useHiddenColumns`)
 - `docs/` — project documentation (data model)
 - `migrations/` — numbered SQL schema migrations, run via `scripts/migrate.mjs`
 - `types/` — shared TypeScript types
