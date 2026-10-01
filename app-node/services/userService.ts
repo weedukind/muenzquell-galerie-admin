@@ -1,14 +1,15 @@
 import db from "@/lib/db";
 import { UserRecord } from "@/types/user";
+import { getGroupsForUsers } from "./groupService";
 
-interface UserRow extends Omit<UserRecord, "isLocked" | "invitedByDeleted"> {
+interface UserRow extends Omit<UserRecord, "isLocked" | "invitedByDeleted" | "groups"> {
     isLocked: number;
     invitedByDeleted: number;
 }
 
 export async function getUsers(): Promise<UserRecord[]> {
 
-    const rows = await db.query<UserRow>(
+    const [rows, groups] = await Promise.all([db.query<UserRow>(
         `SELECT
             u.id,
             u.email,
@@ -30,12 +31,13 @@ export async function getUsers(): Promise<UserRecord[]> {
           AND s.expires_at > STRFTIME('%Y-%m-%dT%H:%M:%SZ', 'now')
          GROUP BY u.id
          ORDER BY u.deleted_at IS NOT NULL, u.display_name COLLATE NOCASE`
-    );
+    ), getGroupsForUsers()]);
 
     return rows.map(row => ({
         ...row,
         isLocked: row.isLocked === 1,
-        invitedByDeleted: row.invitedByDeleted === 1
+        invitedByDeleted: row.invitedByDeleted === 1,
+        groups: groups.get(row.id) ?? []
     }));
 }
 
@@ -69,4 +71,17 @@ export async function deleteUserSessions(id: number): Promise<number> {
     );
 
     return result.changes;
+}
+
+// null if no user with this id exists
+export async function findUser(id: number): Promise<{ id: number; deletedAt: string | null } | null> {
+
+    const rows = await db.query<{ id: number; deletedAt: string | null }>(
+        `SELECT id, deleted_at AS deletedAt
+         FROM users
+         WHERE id = ?`,
+        [id]
+    );
+
+    return rows[0] ?? null;
 }

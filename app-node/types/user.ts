@@ -1,3 +1,5 @@
+import { GroupRef } from "@/types/group";
+
 export interface UserRecord {
     id: number;
     email: string;
@@ -16,4 +18,6 @@ export interface UserRecord {
     createdAt: string;
     // set once the user deleted their account in the frontend; email and displayName are placeholders then
     deletedAt: string | null;
+    // the groups (user_groups) the user is in, by name
+    groups: GroupRef[];
 }
