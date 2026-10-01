@@ -1,4 +1,3 @@
-import {TagRecord} from "@/types/tag";
 import {AttributeValues} from "@/types/attribute";
 import {TaggedPerson} from "@/types/person";
 
@@ -15,7 +14,6 @@ export interface UploadRecord {
     height?: number | null;
     created_at?: string;
     createdAtFormatted?: string;
-    tags?: TagRecord[];
     attributes?: AttributeValues;
     // people tagged on the image in the frontend
     people?: TaggedPerson[];

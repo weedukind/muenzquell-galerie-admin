@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Cloud, LayoutGrid, Upload, Tags, ListChecks, Users, UsersRound, Gauge } from "lucide-react";
+import { Cloud, LayoutGrid, Upload, ListChecks, Users, UsersRound, Gauge } from "lucide-react";
 
 export default function Navigation() {
 
@@ -29,14 +29,6 @@ export default function Navigation() {
                     >
                         <Upload className="size-4" />
                         Upload
-                    </Link>
-
-                    <Link
-                        href="/tags"
-                        className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
-                    >
-                        <Tags className="size-4" />
-                        Tag-Verwaltung
                     </Link>
 
                     <Link
